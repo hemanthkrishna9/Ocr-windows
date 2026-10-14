@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+# private real pages never go into git
+data/real*/
+# generated synthetic images (regenerate with indicocr_bench.synth)
+data/synthetic*/
+out/

@@ -1,0 +1,2886 @@
+{
+ "config": {
+  "models": "/tmp/claude-0/m/models",
+  "data": "data/synthetic",
+  "langs": "per-page meta",
+  "max_side": 960,
+  "threads": 4,
+  "nproc": 4,
+  "rec_batch": 6,
+  "pdf_dpi": 200,
+  "onnxruntime": "1.31.0",
+  "python": "3.12.3",
+  "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+  "loadavg_1min_start_end": [
+   4.88623046875,
+   4.248046875
+  ]
+ },
+ "load_seconds": 0.3972563310003352,
+ "load_detail": {
+  "det": 0.04613899499963736,
+  "rec_devanagari": 0.07109875800006193,
+  "rec_en": 0.060596254000302,
+  "rec_ka": 0.06897158699985084,
+  "rec_ta": 0.05821342699982779,
+  "rec_te": 0.06577811599981942
+ },
+ "pages": [
+  {
+   "page": "hi_00_clean.png",
+   "langs": [
+    "devanagari"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 24,
+   "seconds": 0.9022292549998383,
+   "timings": {
+    "det_s": 0.11606943499964473,
+    "crop_s": 0.03331559100024606,
+    "rec_s": 0.7528442289999475,
+    "total_s": 0.9022292549998383,
+    "decode_s": 0.10503170699985276
+   },
+   "script_counts": {
+    "devanagari": 24
+   },
+   "ref_chars_ns": 1516,
+   "char_errors_ns": 328,
+   "cer_ns": 0.21635883905013192,
+   "ref_chars": 1864,
+   "ref_words": 349,
+   "char_errors": 632,
+   "word_errors": 349,
+   "cer": 0.33905579399141633,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "hi_00_degraded.jpg",
+   "langs": [
+    "devanagari"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 30,
+   "seconds": 1.2473197270001037,
+   "timings": {
+    "det_s": 0.11425053299990395,
+    "crop_s": 0.04481227900032536,
+    "rec_s": 1.0882569149998744,
+    "total_s": 1.2473197270001037,
+    "decode_s": 0.04459943400024713
+   },
+   "script_counts": {
+    "devanagari": 30
+   },
+   "ref_chars_ns": 2572,
+   "char_errors_ns": 763,
+   "cer_ns": 0.29665629860031106,
+   "ref_chars": 3174,
+   "ref_words": 603,
+   "char_errors": 1296,
+   "word_errors": 603,
+   "cer": 0.40831758034026466,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "hi_01_clean.png",
+   "langs": [
+    "devanagari"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 32,
+   "seconds": 1.2842702170000848,
+   "timings": {
+    "det_s": 0.079263082000125,
+    "crop_s": 0.03810357300017131,
+    "rec_s": 1.1669035619997885,
+    "total_s": 1.2842702170000848,
+    "decode_s": 0.19683079400010683
+   },
+   "script_counts": {
+    "devanagari": 32
+   },
+   "ref_chars_ns": 2913,
+   "char_errors_ns": 639,
+   "cer_ns": 0.21936148300720906,
+   "ref_chars": 3586,
+   "ref_words": 674,
+   "char_errors": 1228,
+   "word_errors": 674,
+   "cer": 0.3424428332403793,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "hi_01_degraded.jpg",
+   "langs": [
+    "devanagari"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 30,
+   "seconds": 1.1143685360002564,
+   "timings": {
+    "det_s": 0.10207309599991277,
+    "crop_s": 0.04778009700021357,
+    "rec_s": 0.9645153430001301,
+    "total_s": 1.1143685360002564,
+    "decode_s": 0.04993362699997306
+   },
+   "script_counts": {
+    "devanagari": 30
+   },
+   "ref_chars_ns": 2258,
+   "char_errors_ns": 555,
+   "cer_ns": 0.245792736935341,
+   "ref_chars": 2795,
+   "ref_words": 538,
+   "char_errors": 1026,
+   "word_errors": 538,
+   "cer": 0.3670840787119857,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "hi_02_clean.png",
+   "langs": [
+    "devanagari"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 27,
+   "seconds": 1.0175568330000715,
+   "timings": {
+    "det_s": 0.11341729300011139,
+    "crop_s": 0.043812837000132276,
+    "rec_s": 0.8603267029998278,
+    "total_s": 1.0175568330000715,
+    "decode_s": 0.09284602600018843
+   },
+   "script_counts": {
+    "devanagari": 27
+   },
+   "ref_chars_ns": 2094,
+   "char_errors_ns": 428,
+   "cer_ns": 0.2043935052531041,
+   "ref_chars": 2578,
+   "ref_words": 485,
+   "char_errors": 856,
+   "word_errors": 485,
+   "cer": 0.33204034134988364,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "hi_02_degraded.jpg",
+   "langs": [
+    "devanagari"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 27,
+   "seconds": 0.9337368289998267,
+   "timings": {
+    "det_s": 0.0842283460001454,
+    "crop_s": 0.03933114999972531,
+    "rec_s": 0.810177332999956,
+    "total_s": 0.9337368289998267,
+    "decode_s": 0.05319371899986436
+   },
+   "script_counts": {
+    "devanagari": 27
+   },
+   "ref_chars_ns": 1895,
+   "char_errors_ns": 476,
+   "cer_ns": 0.2511873350923483,
+   "ref_chars": 2334,
+   "ref_words": 440,
+   "char_errors": 854,
+   "word_errors": 440,
+   "cer": 0.3658954584404456,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "hi_03_clean.png",
+   "langs": [
+    "devanagari"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 28,
+   "seconds": 2.087766756000292,
+   "timings": {
+    "det_s": 0.1056473300000107,
+    "crop_s": 0.05560921200003577,
+    "rec_s": 1.9265102140002455,
+    "total_s": 2.087766756000292,
+    "decode_s": 0.10816758700002538
+   },
+   "script_counts": {
+    "devanagari": 28
+   },
+   "ref_chars_ns": 2031,
+   "char_errors_ns": 413,
+   "cer_ns": 0.2033481043820778,
+   "ref_chars": 2508,
+   "ref_words": 478,
+   "char_errors": 834,
+   "word_errors": 478,
+   "cer": 0.33253588516746413,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "hi_03_degraded.jpg",
+   "langs": [
+    "devanagari"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 28,
+   "seconds": 1.8324551290002091,
+   "timings": {
+    "det_s": 0.1730505880000237,
+    "crop_s": 0.042364776999875176,
+    "rec_s": 1.6170397640003102,
+    "total_s": 1.8324551290002091,
+    "decode_s": 0.05163819700010208
+   },
+   "script_counts": {
+    "devanagari": 28
+   },
+   "ref_chars_ns": 2229,
+   "char_errors_ns": 551,
+   "cer_ns": 0.24719605204127412,
+   "ref_chars": 2764,
+   "ref_words": 536,
+   "char_errors": 1030,
+   "word_errors": 536,
+   "cer": 0.37264833574529665,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "hi_04_clean.png",
+   "langs": [
+    "devanagari"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 27,
+   "seconds": 1.9072245150000526,
+   "timings": {
+    "det_s": 0.16011176200026966,
+    "crop_s": 0.05442310299986275,
+    "rec_s": 1.6926896499999202,
+    "total_s": 1.9072245150000526,
+    "decode_s": 0.09288914300032047
+   },
+   "script_counts": {
+    "devanagari": 27
+   },
+   "ref_chars_ns": 1998,
+   "char_errors_ns": 436,
+   "cer_ns": 0.2182182182182182,
+   "ref_chars": 2465,
+   "ref_words": 468,
+   "char_errors": 859,
+   "word_errors": 468,
+   "cer": 0.3484787018255578,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "hi_04_degraded.jpg",
+   "langs": [
+    "devanagari"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 29,
+   "seconds": 2.1233681530002286,
+   "timings": {
+    "det_s": 0.1632176260000051,
+    "crop_s": 0.05612373000030857,
+    "rec_s": 1.904026796999915,
+    "total_s": 2.1233681530002286,
+    "decode_s": 0.055225611999958346
+   },
+   "script_counts": {
+    "devanagari": 29
+   },
+   "ref_chars_ns": 2440,
+   "char_errors_ns": 635,
+   "cer_ns": 0.26024590163934425,
+   "ref_chars": 3017,
+   "ref_words": 578,
+   "char_errors": 1148,
+   "word_errors": 578,
+   "cer": 0.3805104408352668,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "hi_05_clean.png",
+   "langs": [
+    "devanagari"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 31,
+   "seconds": 2.5144327329999214,
+   "timings": {
+    "det_s": 0.23793201399985264,
+    "crop_s": 0.02257988800010935,
+    "rec_s": 2.2539208309999594,
+    "total_s": 2.5144327329999214,
+    "decode_s": 0.034000038000158384
+   },
+   "script_counts": {
+    "devanagari": 31
+   },
+   "ref_chars_ns": 2809,
+   "char_errors_ns": 694,
+   "cer_ns": 0.247063011747953,
+   "ref_chars": 3461,
+   "ref_words": 653,
+   "char_errors": 1271,
+   "word_errors": 653,
+   "cer": 0.36723490320716556,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "hi_05_degraded.jpg",
+   "langs": [
+    "devanagari"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 28,
+   "seconds": 2.004140694000398,
+   "timings": {
+    "det_s": 0.20583255500014275,
+    "crop_s": 0.01732602499987479,
+    "rec_s": 1.7809821140003805,
+    "total_s": 2.004140694000398,
+    "decode_s": 0.006343048999951861
+   },
+   "script_counts": {
+    "devanagari": 28
+   },
+   "ref_chars_ns": 2072,
+   "char_errors_ns": 1262,
+   "cer_ns": 0.609073359073359,
+   "ref_chars": 2553,
+   "ref_words": 482,
+   "char_errors": 1691,
+   "word_errors": 482,
+   "cer": 0.6623580101840971,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "hi_06_clean.png",
+   "langs": [
+    "devanagari"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 31,
+   "seconds": 2.031383201999688,
+   "timings": {
+    "det_s": 0.15945783000006486,
+    "crop_s": 0.01873668500002168,
+    "rec_s": 1.8531886869996015,
+    "total_s": 2.031383201999688,
+    "decode_s": 0.030499797000175022
+   },
+   "script_counts": {
+    "devanagari": 31
+   },
+   "ref_chars_ns": 2410,
+   "char_errors_ns": 479,
+   "cer_ns": 0.1987551867219917,
+   "ref_chars": 2982,
+   "ref_words": 573,
+   "char_errors": 982,
+   "word_errors": 573,
+   "cer": 0.32930918846411805,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "hi_06_degraded.jpg",
+   "langs": [
+    "devanagari"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 27,
+   "seconds": 1.890886412999862,
+   "timings": {
+    "det_s": 0.18392351500006043,
+    "crop_s": 0.02065350299972124,
+    "rec_s": 1.6863093950000803,
+    "total_s": 1.890886412999862,
+    "decode_s": 0.00967679199993654
+   },
+   "script_counts": {
+    "devanagari": 27
+   },
+   "ref_chars_ns": 2150,
+   "char_errors_ns": 1855,
+   "cer_ns": 0.8627906976744186,
+   "ref_chars": 2659,
+   "ref_words": 510,
+   "char_errors": 2331,
+   "word_errors": 510,
+   "cer": 0.8766453553967657,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "hi_07_clean.png",
+   "langs": [
+    "devanagari"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 27,
+   "seconds": 1.8184033640000052,
+   "timings": {
+    "det_s": 0.13915757299992038,
+    "crop_s": 0.016128172999742674,
+    "rec_s": 1.6631176180003422,
+    "total_s": 1.8184033640000052,
+    "decode_s": 0.026262607999797183
+   },
+   "script_counts": {
+    "devanagari": 27
+   },
+   "ref_chars_ns": 2037,
+   "char_errors_ns": 475,
+   "cer_ns": 0.23318605792832597,
+   "ref_chars": 2515,
+   "ref_words": 479,
+   "char_errors": 889,
+   "word_errors": 479,
+   "cer": 0.35347912524850894,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "hi_07_degraded.jpg",
+   "langs": [
+    "devanagari"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 28,
+   "seconds": 0.9601875820003443,
+   "timings": {
+    "det_s": 0.09760737500027972,
+    "crop_s": 0.022864921999826038,
+    "rec_s": 0.8397152850002385,
+    "total_s": 0.9601875820003443,
+    "decode_s": 0.010068211000088922
+   },
+   "script_counts": {
+    "devanagari": 28
+   },
+   "ref_chars_ns": 1945,
+   "char_errors_ns": 1869,
+   "cer_ns": 0.9609254498714653,
+   "ref_chars": 2409,
+   "ref_words": 465,
+   "char_errors": 2296,
+   "word_errors": 465,
+   "cer": 0.9530925695309257,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "hi_08_clean.png",
+   "langs": [
+    "devanagari"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 31,
+   "seconds": 1.1597685500000807,
+   "timings": {
+    "det_s": 0.09691089700027078,
+    "crop_s": 0.018675821999750042,
+    "rec_s": 1.04418183100006,
+    "total_s": 1.1597685500000807,
+    "decode_s": 0.025361150000208
+   },
+   "script_counts": {
+    "devanagari": 31
+   },
+   "ref_chars_ns": 2528,
+   "char_errors_ns": 532,
+   "cer_ns": 0.21044303797468356,
+   "ref_chars": 3120,
+   "ref_words": 593,
+   "char_errors": 1061,
+   "word_errors": 593,
+   "cer": 0.3400641025641026,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "hi_08_degraded.jpg",
+   "langs": [
+    "devanagari"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 30,
+   "seconds": 0.9416274489999523,
+   "timings": {
+    "det_s": 0.09019648899993626,
+    "crop_s": 0.016563953000058973,
+    "rec_s": 0.8348670069999571,
+    "total_s": 0.9416274489999523,
+    "decode_s": 0.00780956700009483
+   },
+   "script_counts": {
+    "devanagari": 30
+   },
+   "ref_chars_ns": 2348,
+   "char_errors_ns": 1808,
+   "cer_ns": 0.7700170357751278,
+   "ref_chars": 2903,
+   "ref_words": 556,
+   "char_errors": 2316,
+   "word_errors": 556,
+   "cer": 0.7977953840854288,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "hi_09_clean.png",
+   "langs": [
+    "devanagari"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 33,
+   "seconds": 1.3018525389998103,
+   "timings": {
+    "det_s": 0.1013552209997215,
+    "crop_s": 0.01525732300024174,
+    "rec_s": 1.1852399949998471,
+    "total_s": 1.3018525389998103,
+    "decode_s": 0.02125601199986704
+   },
+   "script_counts": {
+    "devanagari": 33
+   },
+   "ref_chars_ns": 2857,
+   "char_errors_ns": 593,
+   "cer_ns": 0.20756037801890095,
+   "ref_chars": 3528,
+   "ref_words": 672,
+   "char_errors": 1192,
+   "word_errors": 672,
+   "cer": 0.3378684807256236,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "hi_09_degraded.jpg",
+   "langs": [
+    "devanagari"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 30,
+   "seconds": 1.025979093999922,
+   "timings": {
+    "det_s": 0.0888978389998556,
+    "crop_s": 0.022241432000100758,
+    "rec_s": 0.9148398229999657,
+    "total_s": 1.025979093999922,
+    "decode_s": 0.010368988000209356
+   },
+   "script_counts": {
+    "devanagari": 30
+   },
+   "ref_chars_ns": 2689,
+   "char_errors_ns": 2268,
+   "cer_ns": 0.8434362216437338,
+   "ref_chars": 3300,
+   "ref_words": 612,
+   "char_errors": 2838,
+   "word_errors": 612,
+   "cer": 0.86,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "kn_00_clean.png",
+   "langs": [
+    "ka"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 32,
+   "seconds": 1.0453648289999364,
+   "timings": {
+    "det_s": 0.08596970999997211,
+    "crop_s": 0.046243497999967076,
+    "rec_s": 0.9131516209999972,
+    "total_s": 1.0453648289999364,
+    "decode_s": 0.21938408099958906
+   },
+   "script_counts": {
+    "ka": 32
+   },
+   "ref_chars_ns": 2320,
+   "char_errors_ns": 773,
+   "cer_ns": 0.3331896551724138,
+   "ref_chars": 2610,
+   "ref_words": 291,
+   "char_errors": 997,
+   "word_errors": 291,
+   "cer": 0.38199233716475095,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "kn_00_degraded.jpg",
+   "langs": [
+    "ka"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 29,
+   "seconds": 1.3858146970001144,
+   "timings": {
+    "det_s": 0.12287200499986284,
+    "crop_s": 0.05161189699992974,
+    "rec_s": 1.2113307950003218,
+    "total_s": 1.3858146970001144,
+    "decode_s": 0.1398263669998414
+   },
+   "script_counts": {
+    "ka": 29
+   },
+   "ref_chars_ns": 1796,
+   "char_errors_ns": 623,
+   "cer_ns": 0.34688195991091314,
+   "ref_chars": 2019,
+   "ref_words": 224,
+   "char_errors": 790,
+   "word_errors": 224,
+   "cer": 0.39128281327389797,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "kn_01_clean.png",
+   "langs": [
+    "ka"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 33,
+   "seconds": 2.2943486799999846,
+   "timings": {
+    "det_s": 0.14465260399992985,
+    "crop_s": 0.049512167000102636,
+    "rec_s": 2.100183908999952,
+    "total_s": 2.2943486799999846,
+    "decode_s": 0.07795241700023325
+   },
+   "script_counts": {
+    "ka": 33
+   },
+   "ref_chars_ns": 2426,
+   "char_errors_ns": 708,
+   "cer_ns": 0.29183841714756803,
+   "ref_chars": 2747,
+   "ref_words": 322,
+   "char_errors": 969,
+   "word_errors": 322,
+   "cer": 0.35274845285766293,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "kn_01_degraded.jpg",
+   "langs": [
+    "ka"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 31,
+   "seconds": 2.0374797760000547,
+   "timings": {
+    "det_s": 0.15890025299995614,
+    "crop_s": 0.07757512499983932,
+    "rec_s": 1.8010043980002592,
+    "total_s": 2.0374797760000547,
+    "decode_s": 0.04771661299992047
+   },
+   "script_counts": {
+    "ka": 31
+   },
+   "ref_chars_ns": 2431,
+   "char_errors_ns": 791,
+   "cer_ns": 0.3253805018510901,
+   "ref_chars": 2751,
+   "ref_words": 321,
+   "char_errors": 1050,
+   "word_errors": 320,
+   "cer": 0.3816793893129771,
+   "wer": 0.9968847352024922,
+   "word_acc": 0.0031152647975077885
+  },
+  {
+   "page": "kn_02_clean.png",
+   "langs": [
+    "ka"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 31,
+   "seconds": 2.1030600819999563,
+   "timings": {
+    "det_s": 0.20324845999994068,
+    "crop_s": 0.06283142500024042,
+    "rec_s": 1.8369801969997752,
+    "total_s": 2.1030600819999563,
+    "decode_s": 0.08461573999966276
+   },
+   "script_counts": {
+    "ka": 31
+   },
+   "ref_chars_ns": 2084,
+   "char_errors_ns": 603,
+   "cer_ns": 0.28934740882917465,
+   "ref_chars": 2359,
+   "ref_words": 276,
+   "char_errors": 826,
+   "word_errors": 276,
+   "cer": 0.35014836795252224,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "kn_02_degraded.jpg",
+   "langs": [
+    "ka"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 31,
+   "seconds": 1.5154888550000578,
+   "timings": {
+    "det_s": 0.18451026399998227,
+    "crop_s": 0.052888809999785735,
+    "rec_s": 1.2780897810002898,
+    "total_s": 1.5154888550000578,
+    "decode_s": 0.050439416999779496
+   },
+   "script_counts": {
+    "ka": 31
+   },
+   "ref_chars_ns": 2257,
+   "char_errors_ns": 820,
+   "cer_ns": 0.3633141338059371,
+   "ref_chars": 2554,
+   "ref_words": 298,
+   "char_errors": 1028,
+   "word_errors": 298,
+   "cer": 0.4025058731401723,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "kn_03_clean.png",
+   "langs": [
+    "ka"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 25,
+   "seconds": 0.6754654880000999,
+   "timings": {
+    "det_s": 0.08599945800006026,
+    "crop_s": 0.0374580419997983,
+    "rec_s": 0.5520079880002413,
+    "total_s": 0.6754654880000999,
+    "decode_s": 0.05056451200016454
+   },
+   "script_counts": {
+    "ka": 25
+   },
+   "ref_chars_ns": 1501,
+   "char_errors_ns": 471,
+   "cer_ns": 0.31379080612924715,
+   "ref_chars": 1700,
+   "ref_words": 200,
+   "char_errors": 624,
+   "word_errors": 200,
+   "cer": 0.36705882352941177,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "kn_03_degraded.jpg",
+   "langs": [
+    "ka"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 31,
+   "seconds": 0.9740775099999155,
+   "timings": {
+    "det_s": 0.07894960100020398,
+    "crop_s": 0.04893470899969543,
+    "rec_s": 0.8461932000000161,
+    "total_s": 0.9740775099999155,
+    "decode_s": 0.02876948999983142
+   },
+   "script_counts": {
+    "ka": 31
+   },
+   "ref_chars_ns": 2134,
+   "char_errors_ns": 705,
+   "cer_ns": 0.3303655107778819,
+   "ref_chars": 2404,
+   "ref_words": 271,
+   "char_errors": 910,
+   "word_errors": 271,
+   "cer": 0.3785357737104825,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "kn_04_clean.png",
+   "langs": [
+    "ka"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 29,
+   "seconds": 0.7464319030000297,
+   "timings": {
+    "det_s": 0.0872878820000551,
+    "crop_s": 0.046400167000228976,
+    "rec_s": 0.6127438539997456,
+    "total_s": 0.7464319030000297,
+    "decode_s": 0.07031030799998916
+   },
+   "script_counts": {
+    "ka": 29
+   },
+   "ref_chars_ns": 1828,
+   "char_errors_ns": 573,
+   "cer_ns": 0.3134573304157549,
+   "ref_chars": 2066,
+   "ref_words": 239,
+   "char_errors": 760,
+   "word_errors": 239,
+   "cer": 0.36786060019361083,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "kn_04_degraded.jpg",
+   "langs": [
+    "ka"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 27,
+   "seconds": 0.7220816379999633,
+   "timings": {
+    "det_s": 0.08880229899978076,
+    "crop_s": 0.04544179100003021,
+    "rec_s": 0.5878375480001523,
+    "total_s": 0.7220816379999633,
+    "decode_s": 0.036089113999878464
+   },
+   "script_counts": {
+    "ka": 27
+   },
+   "ref_chars_ns": 1699,
+   "char_errors_ns": 561,
+   "cer_ns": 0.3301942319011183,
+   "ref_chars": 1922,
+   "ref_words": 224,
+   "char_errors": 733,
+   "word_errors": 224,
+   "cer": 0.3813735691987513,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "kn_05_clean.png",
+   "langs": [
+    "ka"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 30,
+   "seconds": 0.9266875210000762,
+   "timings": {
+    "det_s": 0.09099139799991462,
+    "crop_s": 0.020345196000107535,
+    "rec_s": 0.8153509270000541,
+    "total_s": 0.9266875210000762,
+    "decode_s": 0.026343175999954838
+   },
+   "script_counts": {
+    "ka": 30
+   },
+   "ref_chars_ns": 1983,
+   "char_errors_ns": 596,
+   "cer_ns": 0.3005547150781644,
+   "ref_chars": 2244,
+   "ref_words": 262,
+   "char_errors": 808,
+   "word_errors": 262,
+   "cer": 0.3600713012477718,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "kn_05_degraded.jpg",
+   "langs": [
+    "ka"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 26,
+   "seconds": 0.6750300009998682,
+   "timings": {
+    "det_s": 0.08587832400007755,
+    "crop_s": 0.02288297099994452,
+    "rec_s": 0.5662687059998461,
+    "total_s": 0.6750300009998682,
+    "decode_s": 0.01119213399988439
+   },
+   "script_counts": {
+    "ka": 26
+   },
+   "ref_chars_ns": 1668,
+   "char_errors_ns": 1614,
+   "cer_ns": 0.9676258992805755,
+   "ref_chars": 1886,
+   "ref_words": 219,
+   "char_errors": 1668,
+   "word_errors": 231,
+   "cer": 0.8844114528101803,
+   "wer": 1.0547945205479452,
+   "word_acc": 0.0
+  },
+  {
+   "page": "kn_06_clean.png",
+   "langs": [
+    "ka"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 31,
+   "seconds": 0.9950228520001474,
+   "timings": {
+    "det_s": 0.08771812100030729,
+    "crop_s": 0.0147162829998706,
+    "rec_s": 0.8925884479999695,
+    "total_s": 0.9950228520001474,
+    "decode_s": 0.0251648359999308
+   },
+   "script_counts": {
+    "ka": 31
+   },
+   "ref_chars_ns": 2444,
+   "char_errors_ns": 772,
+   "cer_ns": 0.3158756137479542,
+   "ref_chars": 2758,
+   "ref_words": 315,
+   "char_errors": 1023,
+   "word_errors": 315,
+   "cer": 0.37092095721537344,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "kn_06_degraded.jpg",
+   "langs": [
+    "ka"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 30,
+   "seconds": 0.8470833420001327,
+   "timings": {
+    "det_s": 0.08964151300006051,
+    "crop_s": 0.023932968999815785,
+    "rec_s": 0.7335088600002564,
+    "total_s": 0.8470833420001327,
+    "decode_s": 0.00922495999975581
+   },
+   "script_counts": {
+    "ka": 30
+   },
+   "ref_chars_ns": 2218,
+   "char_errors_ns": 976,
+   "cer_ns": 0.4400360685302074,
+   "ref_chars": 2506,
+   "ref_words": 289,
+   "char_errors": 1178,
+   "word_errors": 289,
+   "cer": 0.47007182761372707,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "kn_07_clean.png",
+   "langs": [
+    "ka"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 27,
+   "seconds": 0.8327223010001035,
+   "timings": {
+    "det_s": 0.09287776500013933,
+    "crop_s": 0.016884665999896242,
+    "rec_s": 0.7229598700000679,
+    "total_s": 0.8327223010001035,
+    "decode_s": 0.03158059899988075
+   },
+   "script_counts": {
+    "ka": 27
+   },
+   "ref_chars_ns": 1749,
+   "char_errors_ns": 549,
+   "cer_ns": 0.313893653516295,
+   "ref_chars": 1978,
+   "ref_words": 230,
+   "char_errors": 738,
+   "word_errors": 230,
+   "cer": 0.3731041456016178,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "kn_07_degraded.jpg",
+   "langs": [
+    "ka"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 34,
+   "seconds": 0.8833726359998764,
+   "timings": {
+    "det_s": 0.11104001900002913,
+    "crop_s": 0.01923080000005939,
+    "rec_s": 0.7531018169997878,
+    "total_s": 0.8833726359998764,
+    "decode_s": 0.010082372999931977
+   },
+   "script_counts": {
+    "ka": 34
+   },
+   "ref_chars_ns": 2656,
+   "char_errors_ns": 2511,
+   "cer_ns": 0.9454066265060241,
+   "ref_chars": 2995,
+   "ref_words": 340,
+   "char_errors": 2629,
+   "word_errors": 354,
+   "cer": 0.8777963272120201,
+   "wer": 1.0411764705882354,
+   "word_acc": 0.0
+  },
+  {
+   "page": "kn_08_clean.png",
+   "langs": [
+    "ka"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 31,
+   "seconds": 1.0416526989997692,
+   "timings": {
+    "det_s": 0.11360408499967889,
+    "crop_s": 0.02083205100007035,
+    "rec_s": 0.90721656300002,
+    "total_s": 1.0416526989997692,
+    "decode_s": 0.029589005000161706
+   },
+   "script_counts": {
+    "ka": 31
+   },
+   "ref_chars_ns": 2005,
+   "char_errors_ns": 545,
+   "cer_ns": 0.2718204488778055,
+   "ref_chars": 2271,
+   "ref_words": 267,
+   "char_errors": 762,
+   "word_errors": 267,
+   "cer": 0.33553500660501984,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "kn_08_degraded.jpg",
+   "langs": [
+    "ka"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 28,
+   "seconds": 1.0671264369998426,
+   "timings": {
+    "det_s": 0.15795274900028744,
+    "crop_s": 0.02656936699986545,
+    "rec_s": 0.8826043209996897,
+    "total_s": 1.0671264369998426,
+    "decode_s": 0.010330931000225974
+   },
+   "script_counts": {
+    "ka": 28
+   },
+   "ref_chars_ns": 1833,
+   "char_errors_ns": 1768,
+   "cer_ns": 0.9645390070921985,
+   "ref_chars": 2060,
+   "ref_words": 228,
+   "char_errors": 1828,
+   "word_errors": 228,
+   "cer": 0.887378640776699,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "kn_09_clean.png",
+   "langs": [
+    "ka"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 27,
+   "seconds": 1.006699593999656,
+   "timings": {
+    "det_s": 0.0987920640000084,
+    "crop_s": 0.017279068999869196,
+    "rec_s": 0.8906284609997783,
+    "total_s": 1.006699593999656,
+    "decode_s": 0.025332904000151757
+   },
+   "script_counts": {
+    "ka": 27
+   },
+   "ref_chars_ns": 1792,
+   "char_errors_ns": 545,
+   "cer_ns": 0.3041294642857143,
+   "ref_chars": 2033,
+   "ref_words": 242,
+   "char_errors": 738,
+   "word_errors": 242,
+   "cer": 0.3630103295622233,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "kn_09_degraded.jpg",
+   "langs": [
+    "ka"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 28,
+   "seconds": 0.9668125299999701,
+   "timings": {
+    "det_s": 0.13664428599986422,
+    "crop_s": 0.032116035999933956,
+    "rec_s": 0.798052208000172,
+    "total_s": 0.9668125299999701,
+    "decode_s": 0.01363573600019663
+   },
+   "script_counts": {
+    "ka": 28
+   },
+   "ref_chars_ns": 1769,
+   "char_errors_ns": 1438,
+   "cer_ns": 0.8128886376483889,
+   "ref_chars": 1987,
+   "ref_words": 219,
+   "char_errors": 1523,
+   "word_errors": 219,
+   "cer": 0.7664821338701561,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "ta_00_clean.png",
+   "langs": [
+    "ta"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 31,
+   "seconds": 1.4169794859999456,
+   "timings": {
+    "det_s": 0.11490374100003464,
+    "crop_s": 0.04296949499985203,
+    "rec_s": 1.259106250000059,
+    "total_s": 1.4169794859999456,
+    "decode_s": 0.09092701500003386
+   },
+   "script_counts": {
+    "ta": 31
+   },
+   "ref_chars_ns": 1667,
+   "char_errors_ns": 409,
+   "cer_ns": 0.2453509298140372,
+   "ref_chars": 1860,
+   "ref_words": 194,
+   "char_errors": 538,
+   "word_errors": 194,
+   "cer": 0.289247311827957,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "ta_00_degraded.jpg",
+   "langs": [
+    "ta"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 36,
+   "seconds": 1.440799849999621,
+   "timings": {
+    "det_s": 0.0990492460000496,
+    "crop_s": 0.059183657999710704,
+    "rec_s": 1.2825669459998608,
+    "total_s": 1.440799849999621,
+    "decode_s": 0.046538056999906985
+   },
+   "script_counts": {
+    "ta": 36
+   },
+   "ref_chars_ns": 2189,
+   "char_errors_ns": 567,
+   "cer_ns": 0.25902238465052535,
+   "ref_chars": 2448,
+   "ref_words": 260,
+   "char_errors": 762,
+   "word_errors": 260,
+   "cer": 0.3112745098039216,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "ta_01_clean.png",
+   "langs": [
+    "ta"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 31,
+   "seconds": 1.5436121580000872,
+   "timings": {
+    "det_s": 0.11905295899987323,
+    "crop_s": 0.053460070000255655,
+    "rec_s": 1.3710991289999583,
+    "total_s": 1.5436121580000872,
+    "decode_s": 0.0845249000003605
+   },
+   "script_counts": {
+    "ta": 31
+   },
+   "ref_chars_ns": 1771,
+   "char_errors_ns": 444,
+   "cer_ns": 0.25070581592320723,
+   "ref_chars": 1980,
+   "ref_words": 210,
+   "char_errors": 595,
+   "word_errors": 210,
+   "cer": 0.3005050505050505,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "ta_01_degraded.jpg",
+   "langs": [
+    "ta"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 33,
+   "seconds": 1.5020571589998326,
+   "timings": {
+    "det_s": 0.11437028999989707,
+    "crop_s": 0.053023945999939315,
+    "rec_s": 1.3346629229999962,
+    "total_s": 1.5020571589998326,
+    "decode_s": 0.03476569999975254
+   },
+   "script_counts": {
+    "ta": 33
+   },
+   "ref_chars_ns": 1907,
+   "char_errors_ns": 455,
+   "cer_ns": 0.23859465128474042,
+   "ref_chars": 2123,
+   "ref_words": 217,
+   "char_errors": 607,
+   "word_errors": 217,
+   "cer": 0.28591615638247764,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "ta_02_clean.png",
+   "langs": [
+    "ta"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 34,
+   "seconds": 1.4549024919997464,
+   "timings": {
+    "det_s": 0.12510455599976922,
+    "crop_s": 0.05121252300023116,
+    "rec_s": 1.278585412999746,
+    "total_s": 1.4549024919997464,
+    "decode_s": 0.08567480500005331
+   },
+   "script_counts": {
+    "ta": 34
+   },
+   "ref_chars_ns": 1961,
+   "char_errors_ns": 481,
+   "cer_ns": 0.24528301886792453,
+   "ref_chars": 2189,
+   "ref_words": 229,
+   "char_errors": 635,
+   "word_errors": 229,
+   "cer": 0.2900867976244861,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "ta_02_degraded.jpg",
+   "langs": [
+    "ta"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 29,
+   "seconds": 1.8794364990003487,
+   "timings": {
+    "det_s": 0.10221420700008821,
+    "crop_s": 0.0492020390001926,
+    "rec_s": 1.728020253000068,
+    "total_s": 1.8794364990003487,
+    "decode_s": 0.0377145960001144
+   },
+   "script_counts": {
+    "ta": 29
+   },
+   "ref_chars_ns": 1479,
+   "char_errors_ns": 375,
+   "cer_ns": 0.2535496957403651,
+   "ref_chars": 1661,
+   "ref_words": 183,
+   "char_errors": 515,
+   "word_errors": 183,
+   "cer": 0.31005418422636966,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "ta_03_clean.png",
+   "langs": [
+    "ta"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 29,
+   "seconds": 1.247101694000321,
+   "timings": {
+    "det_s": 0.10348641600012343,
+    "crop_s": 0.04435034200014343,
+    "rec_s": 1.0992649360000541,
+    "total_s": 1.247101694000321,
+    "decode_s": 0.08249258799969539
+   },
+   "script_counts": {
+    "ta": 29
+   },
+   "ref_chars_ns": 1586,
+   "char_errors_ns": 401,
+   "cer_ns": 0.25283732660781844,
+   "ref_chars": 1778,
+   "ref_words": 193,
+   "char_errors": 534,
+   "word_errors": 193,
+   "cer": 0.30033745781777277,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "ta_03_degraded.jpg",
+   "langs": [
+    "ta"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 36,
+   "seconds": 1.8089580910000223,
+   "timings": {
+    "det_s": 0.1005326019999302,
+    "crop_s": 0.053431369000009,
+    "rec_s": 1.654994120000083,
+    "total_s": 1.8089580910000223,
+    "decode_s": 0.03324264000002586
+   },
+   "script_counts": {
+    "ta": 36
+   },
+   "ref_chars_ns": 2134,
+   "char_errors_ns": 800,
+   "cer_ns": 0.37488284910965325,
+   "ref_chars": 2403,
+   "ref_words": 270,
+   "char_errors": 1001,
+   "word_errors": 270,
+   "cer": 0.4165626300457761,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "ta_04_clean.png",
+   "langs": [
+    "ta"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 29,
+   "seconds": 2.070831903999988,
+   "timings": {
+    "det_s": 0.1454979199997979,
+    "crop_s": 0.04434536200005823,
+    "rec_s": 1.8809886220001317,
+    "total_s": 2.070831903999988,
+    "decode_s": 0.101399083999695
+   },
+   "script_counts": {
+    "ta": 29
+   },
+   "ref_chars_ns": 1516,
+   "char_errors_ns": 367,
+   "cer_ns": 0.2420844327176781,
+   "ref_chars": 1703,
+   "ref_words": 188,
+   "char_errors": 501,
+   "word_errors": 188,
+   "cer": 0.29418672930123313,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "ta_04_degraded.jpg",
+   "langs": [
+    "ta"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 32,
+   "seconds": 2.5388926749997154,
+   "timings": {
+    "det_s": 0.19369306299995515,
+    "crop_s": 0.056206043000202044,
+    "rec_s": 2.288993568999558,
+    "total_s": 2.5388926749997154,
+    "decode_s": 0.04980922100003227
+   },
+   "script_counts": {
+    "ta": 32
+   },
+   "ref_chars_ns": 1861,
+   "char_errors_ns": 529,
+   "cer_ns": 0.28425577646426653,
+   "ref_chars": 2100,
+   "ref_words": 240,
+   "char_errors": 711,
+   "word_errors": 240,
+   "cer": 0.3385714285714286,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "ta_05_clean.png",
+   "langs": [
+    "ta"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 27,
+   "seconds": 1.9469033450000097,
+   "timings": {
+    "det_s": 0.1548307329999261,
+    "crop_s": 0.021171430999856966,
+    "rec_s": 1.7709011810002266,
+    "total_s": 1.9469033450000097,
+    "decode_s": 0.028713753999909386
+   },
+   "script_counts": {
+    "ta": 27
+   },
+   "ref_chars_ns": 1261,
+   "char_errors_ns": 317,
+   "cer_ns": 0.2513877874702617,
+   "ref_chars": 1417,
+   "ref_words": 157,
+   "char_errors": 425,
+   "word_errors": 157,
+   "cer": 0.29992942836979536,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "ta_05_degraded.jpg",
+   "langs": [
+    "ta"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 32,
+   "seconds": 2.234586570999909,
+   "timings": {
+    "det_s": 0.18606207699986044,
+    "crop_s": 0.022141986999940855,
+    "rec_s": 2.0263825070001076,
+    "total_s": 2.234586570999909,
+    "decode_s": 0.011150751000059245
+   },
+   "script_counts": {
+    "ta": 32
+   },
+   "ref_chars_ns": 1884,
+   "char_errors_ns": 1339,
+   "cer_ns": 0.7107218683651805,
+   "ref_chars": 2112,
+   "ref_words": 229,
+   "char_errors": 1542,
+   "word_errors": 229,
+   "cer": 0.7301136363636364,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "ta_06_clean.png",
+   "langs": [
+    "ta"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 31,
+   "seconds": 2.579774369000006,
+   "timings": {
+    "det_s": 0.14979659799973888,
+    "crop_s": 0.02407596500006548,
+    "rec_s": 2.4059018060002018,
+    "total_s": 2.579774369000006,
+    "decode_s": 0.03565773699983765
+   },
+   "script_counts": {
+    "ta": 31
+   },
+   "ref_chars_ns": 1818,
+   "char_errors_ns": 458,
+   "cer_ns": 0.25192519251925194,
+   "ref_chars": 2039,
+   "ref_words": 222,
+   "char_errors": 611,
+   "word_errors": 222,
+   "cer": 0.2996566944580677,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "ta_06_degraded.jpg",
+   "langs": [
+    "ta"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 35,
+   "seconds": 2.753507862999868,
+   "timings": {
+    "det_s": 0.31768669799976124,
+    "crop_s": 0.03969807800012859,
+    "rec_s": 2.396123086999978,
+    "total_s": 2.753507862999868,
+    "decode_s": 0.010056831999918359
+   },
+   "script_counts": {
+    "ta": 35
+   },
+   "ref_chars_ns": 2064,
+   "char_errors_ns": 721,
+   "cer_ns": 0.3493217054263566,
+   "ref_chars": 2317,
+   "ref_words": 254,
+   "char_errors": 908,
+   "word_errors": 254,
+   "cer": 0.39188605955977557,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "ta_07_clean.png",
+   "langs": [
+    "ta"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 29,
+   "seconds": 2.016729798999677,
+   "timings": {
+    "det_s": 0.23038931599967327,
+    "crop_s": 0.033672533000299154,
+    "rec_s": 1.7526679499997044,
+    "total_s": 2.016729798999677,
+    "decode_s": 0.022298643999874912
+   },
+   "script_counts": {
+    "ta": 29
+   },
+   "ref_chars_ns": 1367,
+   "char_errors_ns": 325,
+   "cer_ns": 0.2377468910021946,
+   "ref_chars": 1524,
+   "ref_words": 158,
+   "char_errors": 433,
+   "word_errors": 158,
+   "cer": 0.2841207349081365,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "ta_07_degraded.jpg",
+   "langs": [
+    "ta"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 28,
+   "seconds": 1.7681566790001852,
+   "timings": {
+    "det_s": 0.12281017600025734,
+    "crop_s": 0.016744882999773836,
+    "rec_s": 1.628601620000154,
+    "total_s": 1.7681566790001852,
+    "decode_s": 0.015179713000179618
+   },
+   "script_counts": {
+    "ta": 28
+   },
+   "ref_chars_ns": 1317,
+   "char_errors_ns": 940,
+   "cer_ns": 0.7137433561123766,
+   "ref_chars": 1472,
+   "ref_words": 156,
+   "char_errors": 1073,
+   "word_errors": 156,
+   "cer": 0.7289402173913043,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "ta_08_clean.png",
+   "langs": [
+    "ta"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 33,
+   "seconds": 2.19049479000023,
+   "timings": {
+    "det_s": 0.14375517400003446,
+    "crop_s": 0.021819460000187973,
+    "rec_s": 2.0249201560000074,
+    "total_s": 2.19049479000023,
+    "decode_s": 0.05018188799976997
+   },
+   "script_counts": {
+    "ta": 33
+   },
+   "ref_chars_ns": 1965,
+   "char_errors_ns": 508,
+   "cer_ns": 0.2585241730279898,
+   "ref_chars": 2197,
+   "ref_words": 233,
+   "char_errors": 679,
+   "word_errors": 233,
+   "cer": 0.30905780609922623,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "ta_08_degraded.jpg",
+   "langs": [
+    "ta"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 31,
+   "seconds": 2.156816603000152,
+   "timings": {
+    "det_s": 0.15253164200021274,
+    "crop_s": 0.017618116999983613,
+    "rec_s": 1.9866668439999557,
+    "total_s": 2.156816603000152,
+    "decode_s": 0.011094455000147718
+   },
+   "script_counts": {
+    "ta": 31
+   },
+   "ref_chars_ns": 1781,
+   "char_errors_ns": 810,
+   "cer_ns": 0.454800673778776,
+   "ref_chars": 1990,
+   "ref_words": 210,
+   "char_errors": 963,
+   "word_errors": 210,
+   "cer": 0.48391959798994977,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "ta_09_clean.png",
+   "langs": [
+    "ta"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 30,
+   "seconds": 2.34394320399997,
+   "timings": {
+    "det_s": 0.13371182399987447,
+    "crop_s": 0.01846023799998875,
+    "rec_s": 2.191771142000107,
+    "total_s": 2.34394320399997,
+    "decode_s": 0.02653212999985044
+   },
+   "script_counts": {
+    "ta": 30
+   },
+   "ref_chars_ns": 1488,
+   "char_errors_ns": 398,
+   "cer_ns": 0.2674731182795699,
+   "ref_chars": 1664,
+   "ref_words": 177,
+   "char_errors": 526,
+   "word_errors": 177,
+   "cer": 0.3161057692307692,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "ta_09_degraded.jpg",
+   "langs": [
+    "ta"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 34,
+   "seconds": 2.5517034869999407,
+   "timings": {
+    "det_s": 0.18532188000017413,
+    "crop_s": 0.026330475000122533,
+    "rec_s": 2.340051131999644,
+    "total_s": 2.5517034869999407,
+    "decode_s": 0.010602183000173682
+   },
+   "script_counts": {
+    "ta": 34
+   },
+   "ref_chars_ns": 1959,
+   "char_errors_ns": 1068,
+   "cer_ns": 0.5451761102603369,
+   "ref_chars": 2198,
+   "ref_words": 240,
+   "char_errors": 1259,
+   "word_errors": 240,
+   "cer": 0.5727934485896269,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "te_00_clean.png",
+   "langs": [
+    "te"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 27,
+   "seconds": 5.577173586999834,
+   "timings": {
+    "det_s": 0.16489758599982451,
+    "crop_s": 0.04357869600016784,
+    "rec_s": 5.368697304999841,
+    "total_s": 5.577173586999834,
+    "decode_s": 0.07198085800018816
+   },
+   "script_counts": {
+    "te": 27
+   },
+   "ref_chars_ns": 1669,
+   "char_errors_ns": 526,
+   "cer_ns": 0.3151587777112043,
+   "ref_chars": 1893,
+   "ref_words": 225,
+   "char_errors": 691,
+   "word_errors": 225,
+   "cer": 0.3650290544109879,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "te_00_degraded.jpg",
+   "langs": [
+    "te"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 27,
+   "seconds": 4.522972595999818,
+   "timings": {
+    "det_s": 0.14892497199980426,
+    "crop_s": 0.05630817900009788,
+    "rec_s": 4.317739444999916,
+    "total_s": 4.522972595999818,
+    "decode_s": 0.06078799600027196
+   },
+   "script_counts": {
+    "te": 27
+   },
+   "ref_chars_ns": 1765,
+   "char_errors_ns": 671,
+   "cer_ns": 0.3801699716713881,
+   "ref_chars": 1998,
+   "ref_words": 234,
+   "char_errors": 840,
+   "word_errors": 234,
+   "cer": 0.42042042042042044,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "te_01_clean.png",
+   "langs": [
+    "te"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 30,
+   "seconds": 5.263585227000021,
+   "timings": {
+    "det_s": 0.20406114600018554,
+    "crop_s": 0.04826834499999677,
+    "rec_s": 5.011255735999839,
+    "total_s": 5.263585227000021,
+    "decode_s": 0.07175103800000215
+   },
+   "script_counts": {
+    "te": 30
+   },
+   "ref_chars_ns": 2231,
+   "char_errors_ns": 597,
+   "cer_ns": 0.2675930076199014,
+   "ref_chars": 2528,
+   "ref_words": 298,
+   "char_errors": 820,
+   "word_errors": 293,
+   "cer": 0.32436708860759494,
+   "wer": 0.9832214765100671,
+   "word_acc": 0.016778523489932917
+  },
+  {
+   "page": "te_01_degraded.jpg",
+   "langs": [
+    "te"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 32,
+   "seconds": 4.884147006000148,
+   "timings": {
+    "det_s": 0.08910658700006024,
+    "crop_s": 0.04116895300012402,
+    "rec_s": 4.753871465999964,
+    "total_s": 4.884147006000148,
+    "decode_s": 0.040522944000258576
+   },
+   "script_counts": {
+    "te": 32
+   },
+   "ref_chars_ns": 2399,
+   "char_errors_ns": 747,
+   "cer_ns": 0.3113797415589829,
+   "ref_chars": 2721,
+   "ref_words": 323,
+   "char_errors": 964,
+   "word_errors": 323,
+   "cer": 0.35428151414920983,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "te_02_clean.png",
+   "langs": [
+    "te"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 30,
+   "seconds": 5.507479458000034,
+   "timings": {
+    "det_s": 0.08030913700031306,
+    "crop_s": 0.04095188599967514,
+    "rec_s": 5.386218435000046,
+    "total_s": 5.507479458000034,
+    "decode_s": 0.10107028499987791
+   },
+   "script_counts": {
+    "te": 30
+   },
+   "ref_chars_ns": 2463,
+   "char_errors_ns": 696,
+   "cer_ns": 0.28258221680876977,
+   "ref_chars": 2800,
+   "ref_words": 338,
+   "char_errors": 964,
+   "word_errors": 337,
+   "cer": 0.3442857142857143,
+   "wer": 0.9970414201183432,
+   "word_acc": 0.00295857988165682
+  },
+  {
+   "page": "te_02_degraded.jpg",
+   "langs": [
+    "te"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 29,
+   "seconds": 4.645965353000065,
+   "timings": {
+    "det_s": 0.08633809999992081,
+    "crop_s": 0.04385988100011673,
+    "rec_s": 4.5157673720000275,
+    "total_s": 4.645965353000065,
+    "decode_s": 0.03426618799994685
+   },
+   "script_counts": {
+    "te": 29
+   },
+   "ref_chars_ns": 2028,
+   "char_errors_ns": 637,
+   "cer_ns": 0.3141025641025641,
+   "ref_chars": 2308,
+   "ref_words": 281,
+   "char_errors": 801,
+   "word_errors": 280,
+   "cer": 0.34705372616984403,
+   "wer": 0.99644128113879,
+   "word_acc": 0.003558718861209953
+  },
+  {
+   "page": "te_03_clean.png",
+   "langs": [
+    "te"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 34,
+   "seconds": 9.747657133999837,
+   "timings": {
+    "det_s": 0.11406853399967076,
+    "crop_s": 0.055492693000360305,
+    "rec_s": 9.578095906999806,
+    "total_s": 9.747657133999837,
+    "decode_s": 0.10404728299999988
+   },
+   "script_counts": {
+    "te": 34
+   },
+   "ref_chars_ns": 2723,
+   "char_errors_ns": 746,
+   "cer_ns": 0.2739625413147264,
+   "ref_chars": 3092,
+   "ref_words": 370,
+   "char_errors": 1020,
+   "word_errors": 366,
+   "cer": 0.3298835705045278,
+   "wer": 0.9891891891891892,
+   "word_acc": 0.010810810810810811
+  },
+  {
+   "page": "te_03_degraded.jpg",
+   "langs": [
+    "te"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 27,
+   "seconds": 3.401978504999988,
+   "timings": {
+    "det_s": 0.10185633600030997,
+    "crop_s": 0.044251526999687485,
+    "rec_s": 3.2558706419999908,
+    "total_s": 3.401978504999988,
+    "decode_s": 0.028643219000059617
+   },
+   "script_counts": {
+    "te": 27
+   },
+   "ref_chars_ns": 1844,
+   "char_errors_ns": 583,
+   "cer_ns": 0.31616052060737526,
+   "ref_chars": 2093,
+   "ref_words": 250,
+   "char_errors": 747,
+   "word_errors": 249,
+   "cer": 0.3569039655996178,
+   "wer": 0.996,
+   "word_acc": 0.0040000000000000036
+  },
+  {
+   "page": "te_04_clean.png",
+   "langs": [
+    "te"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 29,
+   "seconds": 4.934634719999849,
+   "timings": {
+    "det_s": 0.08386775200006014,
+    "crop_s": 0.04103572699978031,
+    "rec_s": 4.809731241000009,
+    "total_s": 4.934634719999849,
+    "decode_s": 0.0926773190003587
+   },
+   "script_counts": {
+    "te": 29
+   },
+   "ref_chars_ns": 2221,
+   "char_errors_ns": 568,
+   "cer_ns": 0.25574065736154883,
+   "ref_chars": 2528,
+   "ref_words": 308,
+   "char_errors": 799,
+   "word_errors": 304,
+   "cer": 0.3160601265822785,
+   "wer": 0.987012987012987,
+   "word_acc": 0.012987012987012991
+  },
+  {
+   "page": "te_04_degraded.jpg",
+   "langs": [
+    "te"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 26,
+   "seconds": 3.6410351720001017,
+   "timings": {
+    "det_s": 0.08218293299978541,
+    "crop_s": 0.04379089900021427,
+    "rec_s": 3.515061340000102,
+    "total_s": 3.6410351720001017,
+    "decode_s": 0.027327948000220204
+   },
+   "script_counts": {
+    "te": 26
+   },
+   "ref_chars_ns": 1785,
+   "char_errors_ns": 601,
+   "cer_ns": 0.3366946778711485,
+   "ref_chars": 2027,
+   "ref_words": 243,
+   "char_errors": 759,
+   "word_errors": 243,
+   "cer": 0.3744449925999013,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "te_05_clean.png",
+   "langs": [
+    "te"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 26,
+   "seconds": 4.180341562999729,
+   "timings": {
+    "det_s": 0.0903000449998217,
+    "crop_s": 0.022775286000069173,
+    "rec_s": 4.067266231999838,
+    "total_s": 4.180341562999729,
+    "decode_s": 0.020374301999709132
+   },
+   "script_counts": {
+    "te": 26
+   },
+   "ref_chars_ns": 1712,
+   "char_errors_ns": 453,
+   "cer_ns": 0.26460280373831774,
+   "ref_chars": 1951,
+   "ref_words": 240,
+   "char_errors": 644,
+   "word_errors": 238,
+   "cer": 0.3300871348026653,
+   "wer": 0.9916666666666667,
+   "word_acc": 0.008333333333333304
+  },
+  {
+   "page": "te_05_degraded.jpg",
+   "langs": [
+    "te"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 28,
+   "seconds": 4.028932493999946,
+   "timings": {
+    "det_s": 0.0955872750000708,
+    "crop_s": 0.01923995199967976,
+    "rec_s": 3.9141052670001955,
+    "total_s": 4.028932493999946,
+    "decode_s": 0.012882062000244332
+   },
+   "script_counts": {
+    "te": 28
+   },
+   "ref_chars_ns": 1842,
+   "char_errors_ns": 1422,
+   "cer_ns": 0.7719869706840391,
+   "ref_chars": 2087,
+   "ref_words": 246,
+   "char_errors": 1639,
+   "word_errors": 246,
+   "cer": 0.7853378054623862,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "te_06_clean.png",
+   "langs": [
+    "te"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 34,
+   "seconds": 5.983736722999765,
+   "timings": {
+    "det_s": 0.08122961799972472,
+    "crop_s": 0.016085163000298053,
+    "rec_s": 5.886421941999743,
+    "total_s": 5.983736722999765,
+    "decode_s": 0.022149009000258957
+   },
+   "script_counts": {
+    "te": 34
+   },
+   "ref_chars_ns": 2859,
+   "char_errors_ns": 772,
+   "cer_ns": 0.2700244840853445,
+   "ref_chars": 3252,
+   "ref_words": 394,
+   "char_errors": 1083,
+   "word_errors": 392,
+   "cer": 0.33302583025830257,
+   "wer": 0.9949238578680203,
+   "word_acc": 0.005076142131979711
+  },
+  {
+   "page": "te_06_degraded.jpg",
+   "langs": [
+    "te"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 34,
+   "seconds": 3.9889088049999373,
+   "timings": {
+    "det_s": 0.10400928299986845,
+    "crop_s": 0.024336683000001358,
+    "rec_s": 3.8605628390000675,
+    "total_s": 3.9889088049999373,
+    "decode_s": 0.00903901899982884
+   },
+   "script_counts": {
+    "te": 34
+   },
+   "ref_chars_ns": 2740,
+   "char_errors_ns": 1492,
+   "cer_ns": 0.5445255474452555,
+   "ref_chars": 3115,
+   "ref_words": 376,
+   "char_errors": 1820,
+   "word_errors": 376,
+   "cer": 0.5842696629213483,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "te_07_clean.png",
+   "langs": [
+    "te"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 29,
+   "seconds": 5.057073651999872,
+   "timings": {
+    "det_s": 0.08492730599982679,
+    "crop_s": 0.02008764099991822,
+    "rec_s": 4.952058705000127,
+    "total_s": 5.057073651999872,
+    "decode_s": 0.025958924000406114
+   },
+   "script_counts": {
+    "te": 29
+   },
+   "ref_chars_ns": 2096,
+   "char_errors_ns": 551,
+   "cer_ns": 0.26288167938931295,
+   "ref_chars": 2386,
+   "ref_words": 291,
+   "char_errors": 777,
+   "word_errors": 289,
+   "cer": 0.3256496227996647,
+   "wer": 0.993127147766323,
+   "word_acc": 0.0068728522336769515
+  },
+  {
+   "page": "te_07_degraded.jpg",
+   "langs": [
+    "te"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 30,
+   "seconds": 4.671377988000131,
+   "timings": {
+    "det_s": 0.10411125200016613,
+    "crop_s": 0.01500841600000058,
+    "rec_s": 4.552258319999964,
+    "total_s": 4.671377988000131,
+    "decode_s": 0.010213457000190829
+   },
+   "script_counts": {
+    "te": 30
+   },
+   "ref_chars_ns": 2155,
+   "char_errors_ns": 2017,
+   "cer_ns": 0.9359628770301625,
+   "ref_chars": 2452,
+   "ref_words": 298,
+   "char_errors": 2273,
+   "word_errors": 298,
+   "cer": 0.9269983686786297,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "te_08_clean.png",
+   "langs": [
+    "te"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 31,
+   "seconds": 5.698689014000138,
+   "timings": {
+    "det_s": 0.08932922700023482,
+    "crop_s": 0.021172514999761916,
+    "rec_s": 5.588187272000141,
+    "total_s": 5.698689014000138,
+    "decode_s": 0.025151366000045527
+   },
+   "script_counts": {
+    "te": 31
+   },
+   "ref_chars_ns": 2633,
+   "char_errors_ns": 732,
+   "cer_ns": 0.27800987466767946,
+   "ref_chars": 2999,
+   "ref_words": 367,
+   "char_errors": 1020,
+   "word_errors": 366,
+   "cer": 0.3401133711237079,
+   "wer": 0.997275204359673,
+   "word_acc": 0.0027247956403270157
+  },
+  {
+   "page": "te_08_degraded.jpg",
+   "langs": [
+    "te"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 30,
+   "seconds": 4.885211791000074,
+   "timings": {
+    "det_s": 0.10007844500023566,
+    "crop_s": 0.01579284999979791,
+    "rec_s": 4.769340496000041,
+    "total_s": 4.885211791000074,
+    "decode_s": 0.006025781000062125
+   },
+   "script_counts": {
+    "te": 30
+   },
+   "ref_chars_ns": 2362,
+   "char_errors_ns": 2218,
+   "cer_ns": 0.939034716342083,
+   "ref_chars": 2694,
+   "ref_words": 333,
+   "char_errors": 2519,
+   "word_errors": 333,
+   "cer": 0.9350408314773571,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "te_09_clean.png",
+   "langs": [
+    "te"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 28,
+   "seconds": 5.319733294999878,
+   "timings": {
+    "det_s": 0.10917625000001863,
+    "crop_s": 0.018014149000009638,
+    "rec_s": 5.19254289599985,
+    "total_s": 5.319733294999878,
+    "decode_s": 0.024107033999825944
+   },
+   "script_counts": {
+    "te": 28
+   },
+   "ref_chars_ns": 2179,
+   "char_errors_ns": 591,
+   "cer_ns": 0.27122533272143184,
+   "ref_chars": 2479,
+   "ref_words": 301,
+   "char_errors": 823,
+   "word_errors": 301,
+   "cer": 0.33198870512303347,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "te_09_degraded.jpg",
+   "langs": [
+    "te"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 27,
+   "seconds": 3.227359993999926,
+   "timings": {
+    "det_s": 0.09135662099970432,
+    "crop_s": 0.02624269500029186,
+    "rec_s": 3.1097606779999296,
+    "total_s": 3.227359993999926,
+    "decode_s": 0.009841206999681162
+   },
+   "script_counts": {
+    "te": 27
+   },
+   "ref_chars_ns": 1752,
+   "char_errors_ns": 741,
+   "cer_ns": 0.4229452054794521,
+   "ref_chars": 1981,
+   "ref_words": 230,
+   "char_errors": 902,
+   "word_errors": 230,
+   "cer": 0.45532559313478044,
+   "wer": 1.0,
+   "word_acc": 0.0
+  },
+  {
+   "page": "tem_00_clean.png",
+   "langs": [
+    "te",
+    "en"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 35,
+   "seconds": 8.201186116000372,
+   "timings": {
+    "det_s": 0.11989796400030173,
+    "crop_s": 0.05851774699976886,
+    "rec_s": 8.022770405000301,
+    "total_s": 8.201186116000372,
+    "decode_s": 0.1046088090001831
+   },
+   "script_counts": {
+    "te": 20,
+    "en": 15
+   },
+   "ref_chars_ns": 2773,
+   "char_errors_ns": 647,
+   "cer_ns": 0.23332131265777137,
+   "ref_chars": 3226,
+   "ref_words": 454,
+   "char_errors": 749,
+   "word_errors": 222,
+   "cer": 0.23217606943583385,
+   "wer": 0.4889867841409692,
+   "word_acc": 0.5110132158590308
+  },
+  {
+   "page": "tem_00_degraded.jpg",
+   "langs": [
+    "te",
+    "en"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 31,
+   "seconds": 6.829342014999838,
+   "timings": {
+    "det_s": 0.08679731599977458,
+    "crop_s": 0.040075568000247586,
+    "rec_s": 6.702469130999816,
+    "total_s": 6.829342014999838,
+    "decode_s": 0.03987483299988526
+   },
+   "script_counts": {
+    "te": 20,
+    "en": 11
+   },
+   "ref_chars_ns": 2196,
+   "char_errors_ns": 556,
+   "cer_ns": 0.25318761384335153,
+   "ref_chars": 2584,
+   "ref_words": 389,
+   "char_errors": 655,
+   "word_errors": 170,
+   "cer": 0.2534829721362229,
+   "wer": 0.4370179948586118,
+   "word_acc": 0.5629820051413882
+  },
+  {
+   "page": "tem_01_clean.png",
+   "langs": [
+    "te",
+    "en"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 27,
+   "seconds": 5.955057398000008,
+   "timings": {
+    "det_s": 0.10078597799974887,
+    "crop_s": 0.04329787899996518,
+    "rec_s": 5.810973541000294,
+    "total_s": 5.955057398000008,
+    "decode_s": 0.053346851999776845
+   },
+   "script_counts": {
+    "te": 17,
+    "en": 10
+   },
+   "ref_chars_ns": 1650,
+   "char_errors_ns": 333,
+   "cer_ns": 0.2018181818181818,
+   "ref_chars": 1927,
+   "ref_words": 278,
+   "char_errors": 374,
+   "word_errors": 115,
+   "cer": 0.19408406850025947,
+   "wer": 0.4136690647482014,
+   "word_acc": 0.5863309352517986
+  },
+  {
+   "page": "tem_01_degraded.jpg",
+   "langs": [
+    "te",
+    "en"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 27,
+   "seconds": 6.600538130000132,
+   "timings": {
+    "det_s": 0.09915676399987206,
+    "crop_s": 0.04798593100031212,
+    "rec_s": 6.453395434999948,
+    "total_s": 6.600538130000132,
+    "decode_s": 0.05177755100021386
+   },
+   "script_counts": {
+    "te": 20,
+    "en": 7
+   },
+   "ref_chars_ns": 1731,
+   "char_errors_ns": 528,
+   "cer_ns": 0.3050259965337955,
+   "ref_chars": 2019,
+   "ref_words": 289,
+   "char_errors": 646,
+   "word_errors": 175,
+   "cer": 0.31996037642397224,
+   "wer": 0.6055363321799307,
+   "word_acc": 0.39446366782006925
+  },
+  {
+   "page": "tem_02_clean.png",
+   "langs": [
+    "te",
+    "en"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 32,
+   "seconds": 9.174275564000254,
+   "timings": {
+    "det_s": 0.11655046700025196,
+    "crop_s": 0.054897109999728855,
+    "rec_s": 9.002827987000273,
+    "total_s": 9.174275564000254,
+    "decode_s": 0.08337894699980097
+   },
+   "script_counts": {
+    "te": 21,
+    "en": 11
+   },
+   "ref_chars_ns": 2583,
+   "char_errors_ns": 706,
+   "cer_ns": 0.27332559039876114,
+   "ref_chars": 3001,
+   "ref_words": 419,
+   "char_errors": 797,
+   "word_errors": 211,
+   "cer": 0.2655781406197934,
+   "wer": 0.5035799522673031,
+   "word_acc": 0.4964200477326969
+  },
+  {
+   "page": "tem_02_degraded.jpg",
+   "langs": [
+    "te",
+    "en"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 28,
+   "seconds": 5.7881652940000095,
+   "timings": {
+    "det_s": 0.11469794100003128,
+    "crop_s": 0.04810271600035776,
+    "rec_s": 5.62536463699962,
+    "total_s": 5.7881652940000095,
+    "decode_s": 0.02791562900029021
+   },
+   "script_counts": {
+    "te": 27,
+    "en": 1
+   },
+   "ref_chars_ns": 2008,
+   "char_errors_ns": 608,
+   "cer_ns": 0.30278884462151395,
+   "ref_chars": 2308,
+   "ref_words": 301,
+   "char_errors": 760,
+   "word_errors": 212,
+   "cer": 0.3292894280762565,
+   "wer": 0.7043189368770764,
+   "word_acc": 0.29568106312292364
+  },
+  {
+   "page": "tem_03_clean.png",
+   "langs": [
+    "te",
+    "en"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 29,
+   "seconds": 6.937024163999922,
+   "timings": {
+    "det_s": 0.08255503800000952,
+    "crop_s": 0.04314144899990424,
+    "rec_s": 6.811327677000008,
+    "total_s": 6.937024163999922,
+    "decode_s": 0.05267862900018372
+   },
+   "script_counts": {
+    "te": 21,
+    "en": 8
+   },
+   "ref_chars_ns": 1970,
+   "char_errors_ns": 373,
+   "cer_ns": 0.18934010152284264,
+   "ref_chars": 2311,
+   "ref_words": 342,
+   "char_errors": 418,
+   "word_errors": 146,
+   "cer": 0.18087408048463868,
+   "wer": 0.4269005847953216,
+   "word_acc": 0.5730994152046784
+  },
+  {
+   "page": "tem_03_degraded.jpg",
+   "langs": [
+    "te",
+    "en"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 31,
+   "seconds": 7.710486993000359,
+   "timings": {
+    "det_s": 0.11039874700009022,
+    "crop_s": 0.056928556999992,
+    "rec_s": 7.543159689000277,
+    "total_s": 7.710486993000359,
+    "decode_s": 0.048448710999764444
+   },
+   "script_counts": {
+    "te": 22,
+    "en": 9
+   },
+   "ref_chars_ns": 2597,
+   "char_errors_ns": 756,
+   "cer_ns": 0.29110512129380056,
+   "ref_chars": 3033,
+   "ref_words": 437,
+   "char_errors": 890,
+   "word_errors": 222,
+   "cer": 0.2934388394329047,
+   "wer": 0.5080091533180778,
+   "word_acc": 0.49199084668192217
+  },
+  {
+   "page": "tem_04_clean.png",
+   "langs": [
+    "te",
+    "en"
+   ],
+   "variant": "clean",
+   "n_pdf_pages": 1,
+   "n_lines": 31,
+   "seconds": 7.736223352999787,
+   "timings": {
+    "det_s": 0.10280454099984127,
+    "crop_s": 0.04449045599994861,
+    "rec_s": 7.588928355999997,
+    "total_s": 7.736223352999787,
+    "decode_s": 0.06837739500042517
+   },
+   "script_counts": {
+    "te": 21,
+    "en": 10
+   },
+   "ref_chars_ns": 2253,
+   "char_errors_ns": 582,
+   "cer_ns": 0.2583222370173103,
+   "ref_chars": 2629,
+   "ref_words": 377,
+   "char_errors": 662,
+   "word_errors": 189,
+   "cer": 0.2518067706352225,
+   "wer": 0.5013262599469496,
+   "word_acc": 0.49867374005305043
+  },
+  {
+   "page": "tem_04_degraded.jpg",
+   "langs": [
+    "te",
+    "en"
+   ],
+   "variant": "degraded",
+   "n_pdf_pages": 1,
+   "n_lines": 27,
+   "seconds": 5.6688500979998935,
+   "timings": {
+    "det_s": 0.08947020599998723,
+    "crop_s": 0.03757650099987586,
+    "rec_s": 5.54180339100003,
+    "total_s": 5.6688500979998935,
+    "decode_s": 0.03419216200018127
+   },
+   "script_counts": {
+    "te": 24,
+    "en": 3
+   },
+   "ref_chars_ns": 1831,
+   "char_errors_ns": 551,
+   "cer_ns": 0.3009284543965046,
+   "ref_chars": 2114,
+   "ref_words": 284,
+   "char_errors": 665,
+   "word_errors": 189,
+   "cer": 0.31456953642384106,
+   "wer": 0.6654929577464789,
+   "word_acc": 0.3345070422535211
+  }
+ ],
+ "aggregate": {
+  "all": {
+   "pages": 90,
+   "cer": 0.42369814324589494,
+   "wer": 0.9422992909231441,
+   "word_acc": 0.05770070907685587,
+   "cer_ns": 0.37398408875107964,
+   "word_acc_macro": 0.05358197792542809,
+   "sec_mean": 2.9117345873444416,
+   "sec_median": 2.0374797760000547,
+   "sec_p95": 7.710486993000359,
+   "sec_max": 9.747657133999837
+  },
+  "groups": {
+   "hi/clean": {
+    "pages": 10,
+    "cer": 0.3427133219142168,
+    "wer": 1.0,
+    "word_acc": 0.0,
+    "cer_ns": 0.21631526753761912,
+    "word_acc_macro": 0.0,
+    "sec_mean": 1.6024887963999845,
+    "sec_median": 1.8184033640000052,
+    "sec_p95": 2.5144327329999214,
+    "sec_max": 2.5144327329999214
+   },
+   "hi/degraded": {
+    "pages": 10,
+    "cer": 0.6029095599828006,
+    "wer": 1.0,
+    "word_acc": 0.0,
+    "cer_ns": 0.53287901584211,
+    "word_acc_macro": 0.0,
+    "sec_mean": 1.4074069606001103,
+    "sec_median": 1.2473197270001037,
+    "sec_p95": 2.1233681530002286,
+    "sec_max": 2.1233681530002286
+   },
+   "kn/clean": {
+    "pages": 10,
+    "cer": 0.3621628744619169,
+    "wer": 1.0,
+    "word_acc": 0.0,
+    "cer_ns": 0.3047387244188357,
+    "word_acc_macro": 0.0,
+    "sec_mean": 1.1667455948999759,
+    "sec_median": 1.006699593999656,
+    "sec_p95": 2.2943486799999846,
+    "sec_max": 2.2943486799999846
+   },
+   "kn/degraded": {
+    "pages": 10,
+    "cer": 0.5777594870906255,
+    "wer": 1.009494872768705,
+    "word_acc": 0.0,
+    "cer_ns": 0.5770490200869948,
+    "word_acc_macro": 0.00031152647975077883,
+    "sec_mean": 1.1074367421999796,
+    "sec_median": 0.9740775099999155,
+    "sec_p95": 2.0374797760000547,
+    "sec_max": 2.0374797760000547
+   },
+   "ta/clean": {
+    "pages": 10,
+    "cer": 0.29845784970846273,
+    "wer": 1.0,
+    "word_acc": 0.0,
+    "cer_ns": 0.2504878048780488,
+    "word_acc_macro": 0.0,
+    "sec_mean": 1.8811273240999982,
+    "sec_median": 2.016729798999677,
+    "sec_p95": 2.579774369000006,
+    "sec_max": 2.579774369000006
+   },
+   "ta/degraded": {
+    "pages": 10,
+    "cer": 0.44856895889358434,
+    "wer": 1.0,
+    "word_acc": 0.0,
+    "cer_ns": 0.40936742934051146,
+    "word_acc_macro": 0.0,
+    "sec_mean": 2.0634915476999596,
+    "sec_median": 2.156816603000152,
+    "sec_p95": 2.753507862999868,
+    "sec_max": 2.753507862999868
+   },
+   "te/clean": {
+    "pages": 10,
+    "cer": 0.33352632391539294,
+    "wer": 0.9932950191570882,
+    "word_acc": 0.006704980842911823,
+    "cer_ns": 0.27350127271131397,
+    "word_acc_macro": 0.006654205050873052,
+    "sec_mean": 5.727010437299896,
+    "sec_median": 5.507479458000034,
+    "sec_p95": 9.747657133999837,
+    "sec_max": 9.747657133999837
+   },
+   "te/degraded": {
+    "pages": 10,
+    "cer": 0.5650025558016698,
+    "wer": 0.9992892679459844,
+    "word_acc": 0.000710732054015617,
+    "cer_ns": 0.5383610681114551,
+    "word_acc_macro": 0.0007558718861209957,
+    "sec_mean": 4.189788970400014,
+    "sec_median": 4.522972595999818,
+    "sec_p95": 4.885211791000074,
+    "sec_max": 4.885211791000074
+   },
+   "tem/clean": {
+    "pages": 5,
+    "cer": 0.2291125706430426,
+    "wer": 0.47219251336898393,
+    "word_acc": 0.5278074866310161,
+    "cer_ns": 0.23519458544839256,
+    "word_acc_macro": 0.533107470820251,
+    "sec_mean": 7.600753319000068,
+    "sec_median": 7.736223352999787,
+    "sec_p95": 9.174275564000254,
+    "sec_max": 9.174275564000254
+   },
+   "tem/degraded": {
+    "pages": 5,
+    "cer": 0.29988389450986896,
+    "wer": 0.5694117647058824,
+    "word_acc": 0.4305882352941176,
+    "cer_ns": 0.28939496284859595,
+    "word_acc_macro": 0.41592492500396483,
+    "sec_mean": 6.519476506000046,
+    "sec_median": 6.600538130000132,
+    "sec_p95": 7.710486993000359,
+    "sec_max": 7.710486993000359
+   }
+  }
+ }
+}
