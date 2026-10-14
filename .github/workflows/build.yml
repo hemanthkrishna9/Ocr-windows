@@ -1,0 +1,65 @@
+name: build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  core-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Install fonts and poppler (so the PDF text-layer tests really run)
+        run: sudo apt-get update && sudo apt-get install -y fonts-noto-core poppler-utils
+      - name: Build core library
+        run: dotnet build src/IndicOcr.Core -c Release
+      - name: Test core library (integration tests skip when models are absent)
+        run: dotnet test tests/IndicOcr.Core.Tests -c Release
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Restore app
+        run: dotnet restore app/IndicOcr.App/IndicOcr.App.csproj -r win-x64 -p:Platform=x64
+      - name: Build app (x64 Release)
+        run: dotnet build app/IndicOcr.App/IndicOcr.App.csproj -c Release -r win-x64 -p:Platform=x64 --no-restore
+      - name: Test core library
+        run: dotnet test tests/IndicOcr.Core.Tests -c Release
+      - name: Publish app (self-contained x64)
+        run: dotnet publish app/IndicOcr.App/IndicOcr.App.csproj -c Release -r win-x64 -p:Platform=x64 --self-contained true -o publish/win-x64
+      - name: Smoke test the published app
+        shell: pwsh
+        run: |
+          $dir = Resolve-Path publish/win-x64
+          $exe = Join-Path $dir 'IndicOcr.App.exe'
+          if (-not (Test-Path $exe)) { throw "Missing $exe" }
+          if (-not (Get-ChildItem $dir -Filter *.pri)) { throw "No .pri resource index in the publish folder (the app cannot load its XAML without it)" }
+          if (-not (Test-Path (Join-Path $dir 'fonts/NotoSansTelugu-Regular.ttf'))) { throw "Bundled fonts are missing from the publish folder" }
+          $p = Start-Process -FilePath $exe -WorkingDirectory $dir -PassThru
+          Start-Sleep -Seconds 10
+          if ($p.HasExited) {
+            Write-Host "IndicOcr.App.exe exited early with code $($p.ExitCode)"
+            exit 1
+          }
+          Write-Host "App is still running after 10 s"
+          Stop-Process -Id $p.Id -Force
+      - name: Report publish size (installer budget is 150 MB without models)
+        shell: pwsh
+        run: |
+          $bytes = (Get-ChildItem publish/win-x64 -Recurse -File | Measure-Object -Property Length -Sum).Sum
+          $mb = [math]::Round($bytes / 1MB, 1)
+          Write-Host "Publish folder size: $mb MB (budget 150 MB, models excluded)"
+          "### Publish size`n$mb MB of the 150 MB budget (models excluded)" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+          if ($mb -gt 150) { Write-Host "::warning::Publish folder exceeds the 150 MB installer budget" }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IndicOcr-win-x64
+          path: publish/win-x64
+          if-no-files-found: error

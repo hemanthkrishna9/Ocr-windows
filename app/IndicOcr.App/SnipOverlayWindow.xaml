@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="IndicOcr.App.SnipOverlayWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid x:Name="Root"
+          Background="Black"
+          IsTabStop="True"
+          Loaded="Root_Loaded"
+          KeyDown="Root_KeyDown"
+          PointerPressed="Root_PointerPressed"
+          PointerMoved="Root_PointerMoved"
+          PointerReleased="Root_PointerReleased">
+        <Image x:Name="Backdrop" Stretch="Fill" IsHitTestVisible="False" />
+        <Rectangle Fill="#66000000" IsHitTestVisible="False" />
+        <Canvas IsHitTestVisible="False">
+            <Rectangle x:Name="Selection"
+                       Visibility="Collapsed"
+                       Stroke="#FF3B9DFF"
+                       StrokeThickness="2"
+                       Fill="#22FFFFFF" />
+        </Canvas>
+        <TextBlock Text="Drag to select the text to read. Esc or right-click cancels."
+                   Foreground="White"
+                   FontSize="16"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Top"
+                   Margin="0,24,0,0"
+                   IsHitTestVisible="False" />
+    </Grid>
+</Window>
