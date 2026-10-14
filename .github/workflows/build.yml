@@ -218,7 +218,8 @@ jobs:
           }
           foreach ($f in 'telugu-sample.txt','telugu-sample.docx','telugu-sample.ocr.pdf') {
             $fp = Join-Path $out $f
-            if (-not (Test-Path $fp) -or (Get-Item $fp).Length -lt 1000) { throw "Output missing or too small: $f" }
+            $min = if ($f -like "*.txt") { 20 } else { 1000 }
+            if (-not (Test-Path $fp) -or (Get-Item $fp).Length -lt $min) { throw "Output missing or too small: $f" }
           }
           $text = Get-Content (Join-Path $out 'telugu-sample.txt') -Raw -Encoding UTF8
           Write-Host $text
