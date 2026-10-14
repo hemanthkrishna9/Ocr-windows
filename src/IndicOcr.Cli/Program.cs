@@ -14,7 +14,14 @@ static class Program
                        [--fonts DIR] [--max-side N] [--threads N]
           indicocr langs --models DIR
 
-        Languages: en, te (Telugu), hi (Hindi/Marathi, Devanagari; "mr" is an alias), ta (Tamil), kn (Kannada); join with +.
+        Output files are written next to each input (or under --out-dir, keeping sub-folders of a folder input):
+          <name>.txt, <name>.docx, <name>.ocr.pdf   (the searchable PDF never replaces the input)
+        If two inputs in one folder share a base name (multi.tif + multi.pdf), the source extension is added:
+          multi.tif.txt, multi.pdf.txt, multi.tif.ocr.pdf, ...
+        The command refuses to run if an output path equals an input path or another output.
+        A file that fails is reported as "FAILED <file>: <reason>" and the rest still run; exit code 1 if any failed, 2 for bad arguments.
+
+        Languages: en, te (Telugu), hi (Hindi/Marathi, Devanagari; "mr" is an alias), ta (Tamil), kn (Kannada, beta: older model, expect many errors); join with +.
         te/hi/ta + en runs only the Indic recognizer (its dictionary includes A-Z, a-z, 0-9).
         The models folder defaults to the INDICOCR_MODELS environment variable.
         """;
@@ -38,9 +45,10 @@ static class Program
             }
         }
         catch (ArgumentException e) { Console.Error.WriteLine(e.Message); return 2; }
-        catch (Exception e) when (e is IOException or InvalidDataException or NotSupportedException or UnauthorizedAccessException)
+        catch (OperationCanceledException) { return 130; }
+        catch (Exception e)
         {
-            Console.Error.WriteLine("Error: " + e.Message);
+            Console.Error.WriteLine($"Error: {e.GetType().Name}: {e.Message.ReplaceLineEndings(" ")}");
             return 1;
         }
     }
@@ -102,6 +110,25 @@ static class Program
         return res.Distinct().ToList();
     }
 
+    static int ParseInt(Dictionary<string, string> o, string key, int min, int def)
+    {
+        if (!o.TryGetValue(key, out var v)) return def;
+        if (!int.TryParse(v, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int n) || n < min)
+            throw new ArgumentException($"--{key} must be an integer >= {min} (got '{v}').");
+        return n;
+    }
+
+    static readonly StringComparer PathComparer = OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+
+    /// <summary>Output file name stem: "name", or "name.ext" when another input in the same folder has the same base name.</summary>
+    static string OutputStem(string file, bool disambiguate)
+    {
+        string name = Path.GetFileNameWithoutExtension(file);
+        return disambiguate ? name + "." + Path.GetExtension(file).TrimStart('.').ToLowerInvariant() : name;
+    }
+
+    static string OutputName(string stem, string format) => format == "pdf" ? stem + ".ocr.pdf" : stem + "." + format;
+
     static int Ocr(List<string> positional, Dictionary<string, string> o, string models)
     {
         if (positional.Count != 1) throw new ArgumentException("ocr needs exactly one file or folder.");
@@ -109,14 +136,15 @@ static class Program
         var langs = ParseLanguages(o.GetValueOrDefault("lang") ?? "");
         var formats = (o.GetValueOrDefault("format") ?? "txt").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(f => f.ToLowerInvariant()).Distinct().ToList();
+        if (formats.Count == 0) throw new ArgumentException("--format needs at least one of txt, docx, pdf.");
         foreach (var f in formats) if (f is not ("txt" or "docx" or "pdf")) throw new ArgumentException($"Unknown format '{f}'. Use txt, docx, pdf.");
         string? outDir = o.GetValueOrDefault("out-dir");
         string? fonts = o.GetValueOrDefault("fonts");
         bool recursive = o.ContainsKey("recursive");
         var eo = new OcrEngineOptions
         {
-            MaxSideLength = o.TryGetValue("max-side", out var ms) ? int.Parse(ms) : new OcrEngineOptions().MaxSideLength,
-            IntraOpThreads = o.TryGetValue("threads", out var th) ? int.Parse(th) : 0,
+            MaxSideLength = ParseInt(o, "max-side", 32, new OcrEngineOptions().MaxSideLength),
+            IntraOpThreads = ParseInt(o, "threads", 0, 0),
         };
 
         var files = InputFiles.Enumerate(positional[0], recursive).ToList();
@@ -126,27 +154,67 @@ static class Program
         var missing = langs.Where(l => !available.Contains(l)).ToList();
         if (missing.Count > 0) throw new ArgumentException("Models not found for: " + string.Join(", ", missing.Select(Code)));
 
-        using var engine = new OcrEngine(models, eo);
-        var total = Stopwatch.StartNew();
-        int pageCount = 0;
+        // Plan every output path up front and refuse anything that would overwrite an input or another output.
+        string root = Directory.Exists(positional[0]) ? Path.GetFullPath(positional[0]) : Path.GetDirectoryName(Path.GetFullPath(positional[0]))!;
+        var plans = new List<(string File, Dictionary<string, string> Outputs)>();
+        var inputSet = new HashSet<string>(files.Select(Path.GetFullPath), PathComparer);
+        var sameDirBase = files.GroupBy(f => Path.Combine(Path.GetDirectoryName(Path.GetFullPath(f))!, Path.GetFileNameWithoutExtension(f)), PathComparer)
+            .Where(g => g.Count() > 1).SelectMany(g => g).Select(Path.GetFullPath).ToHashSet(PathComparer);
+        var claimed = new Dictionary<string, string>(PathComparer);
         foreach (var file in files)
         {
-            string baseName = Path.GetFileNameWithoutExtension(file);
-            string dir = outDir ?? Path.GetDirectoryName(Path.GetFullPath(file))!;
-            Directory.CreateDirectory(dir);
-            var pages = new List<OcrPage>();
-            var stream = Stream(engine, file, langs, pages);
-            if (formats.Contains("pdf"))
-                SearchablePdfExporter.Write(stream, Path.Combine(dir, baseName + ".pdf"), fonts);
-            else
-                foreach (var (img, _) in stream) { }
-            if (formats.Contains("txt")) TextExporter.Write(pages, Path.Combine(dir, baseName + ".txt"));
-            if (formats.Contains("docx")) DocxExporter.Write(pages, Path.Combine(dir, baseName + ".docx"));
-            pageCount += pages.Count;
+            string full = Path.GetFullPath(file);
+            string srcDir = Path.GetDirectoryName(full)!;
+            string dir = outDir == null ? srcDir : Path.Combine(Path.GetFullPath(outDir), Path.GetRelativePath(root, srcDir));
+            string stem = OutputStem(full, sameDirBase.Contains(full));
+            var outs = new Dictionary<string, string>();
+            foreach (var fmt in formats)
+            {
+                string target = Path.GetFullPath(Path.Combine(dir, OutputName(stem, fmt)));
+                if (inputSet.Contains(target))
+                    throw new ArgumentException($"Refusing to write '{target}': it is also an input file.");
+                if (claimed.TryGetValue(target, out var other))
+                    throw new ArgumentException($"Output '{target}' would be written by both '{other}' and '{file}'.");
+                claimed[target] = file;
+                outs[fmt] = target;
+            }
+            plans.Add((file, outs));
+        }
+
+        using var engine = new OcrEngine(models, eo);
+        var total = Stopwatch.StartNew();
+        int pageCount = 0, failed = 0;
+        foreach (var (file, outs) in plans)
+        {
+            var written = new List<string>();
+            try
+            {
+                foreach (var p in outs.Values) Directory.CreateDirectory(Path.GetDirectoryName(p)!);
+                var pages = new List<OcrPage>();
+                var stream = Stream(engine, file, langs, pages);
+                if (outs.TryGetValue("pdf", out var pdf))
+                {
+                    written.Add(pdf);
+                    SearchablePdfExporter.Write(stream, pdf, fonts);
+                }
+                else
+                    foreach (var (img, _) in stream) { }
+                if (outs.TryGetValue("txt", out var txt)) { written.Add(txt); TextExporter.Write(pages, txt); }
+                if (outs.TryGetValue("docx", out var docx)) { written.Add(docx); DocxExporter.Write(pages, docx); }
+                pageCount += pages.Count;
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception e)
+            {
+                failed++;
+                foreach (var w in written) { try { File.Delete(w); } catch { /* best effort */ } }
+                // Only the exception type and message are printed, never document text.
+                Console.Error.WriteLine($"FAILED {file}: {e.GetType().Name}: {e.Message.ReplaceLineEndings(" ")}");
+            }
         }
         total.Stop();
-        Console.WriteLine($"Done: {files.Count} file(s), {pageCount} page(s) in {total.Elapsed.TotalSeconds:F2}s");
-        return 0;
+        Console.WriteLine($"Done: {files.Count - failed} of {files.Count} file(s), {pageCount} page(s) in {total.Elapsed.TotalSeconds:F2}s" + (failed > 0 ? $", {failed} FAILED" : ""));
+        return failed > 0 ? 1 : 0;
     }
 
     /// <summary>Synchronous lazy view of the async OCR stream; disposes each page image once the consumer moves on.</summary>

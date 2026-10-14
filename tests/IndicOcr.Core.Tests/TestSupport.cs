@@ -15,6 +15,25 @@ public sealed class ModelsFactAttribute : FactAttribute
     }
 }
 
+/// <summary>Skipped (reported as skipped, not passed) when INDICOCR_MODELS is not set; needs no fonts.</summary>
+public sealed class ModelsOnlyFactAttribute : FactAttribute
+{
+    public ModelsOnlyFactAttribute()
+    {
+        if (TestEnv.ModelsDir == null) Skip = "INDICOCR_MODELS not set (or folder missing); test skipped.";
+    }
+}
+
+/// <summary>Skipped when poppler's pdftotext is not on the PATH or the Noto fonts are missing.</summary>
+public sealed class PdftotextFactAttribute : FactAttribute
+{
+    public PdftotextFactAttribute()
+    {
+        if (TestEnv.FontsDir == null) Skip = "Noto fonts not found (set INDICOCR_TEST_FONTS).";
+        else if (!TestEnv.HavePdftotext()) Skip = "pdftotext (poppler) not on PATH; text-extraction check skipped.";
+    }
+}
+
 /// <summary>Skipped (reported as skipped, not passed) when the Noto test fonts cannot be found; set INDICOCR_TEST_FONTS.</summary>
 public sealed class FontsFactAttribute : FactAttribute
 {
@@ -44,6 +63,17 @@ public static class TestEnv
             var cands = new[] { Environment.GetEnvironmentVariable("INDICOCR_TEST_FONTS"), "/usr/share/fonts/truetype/noto" };
             return cands.FirstOrDefault(c => !string.IsNullOrEmpty(c) && File.Exists(Path.Combine(c, "NotoSansTelugu-Regular.ttf")));
         }
+    }
+
+    public static bool HavePdftotext()
+    {
+        try
+        {
+            using var p = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("pdftotext", "-v") { RedirectStandardError = true, RedirectStandardOutput = true });
+            p?.WaitForExit(5000);
+            return p != null;
+        }
+        catch { return false; }
     }
 
     public static string Font(string file) => Path.Combine(FontsDir!, file);

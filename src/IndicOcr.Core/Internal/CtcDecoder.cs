@@ -38,16 +38,29 @@ internal sealed class CharTable
     }
 }
 
+/// <summary>
+/// Result of a greedy CTC decode.
+/// Confidence = mean max-probability of the kept characters (what the UI shows).
+/// Mass = sum over the kept characters of (2p - 1): about "characters read correctly minus characters invented". Recognizers are
+/// compared by Mass, because (unlike a mean) a recognizer that DROPS part of the line, for example a script it cannot read,
+/// scores lower than one that reads it, and a garbled hallucination (p near 0.5) earns almost nothing.
+/// Score = mean over ALL frames (blanks included) of log(max-probability); used only to judge whether a line reads well.
+/// </summary>
+internal readonly record struct DecodeResult(string Text, float Confidence, float Score, float Mass)
+{
+    public void Deconstruct(out string text, out float confidence) { text = Text; confidence = Confidence; }
+}
+
 internal static class CtcDecoder
 {
     /// <summary>
     /// Greedy CTC decode of one sequence. probs: [T*C] softmax. Collapses repeats, drops blanks.
     /// Confidence = mean of the max probability of the kept characters (0 if none).
     /// </summary>
-    public static (string Text, float Confidence) Decode(ReadOnlySpan<float> probs, int t, int c, CharTable table)
+    public static DecodeResult Decode(ReadOnlySpan<float> probs, int t, int c, CharTable table)
     {
         var sb = new StringBuilder();
-        double conf = 0;
+        double conf = 0, logSum = 0, mass = 0;
         int kept = 0, prev = 0;
         for (int i = 0; i < t; i++)
         {
@@ -56,14 +69,16 @@ internal static class CtcDecoder
             float bp = row[0];
             for (int k = 1; k < c; k++)
                 if (row[k] > bp) { bp = row[k]; best = k; }
+            logSum += Math.Log(Math.Max(bp, 1e-6f));
             if (best != 0 && best != prev)
             {
                 sb.Append(table[best]);
                 conf += bp;
+                mass += 2 * bp - 1;
                 kept++;
             }
             prev = best;
         }
-        return (sb.ToString(), kept == 0 ? 0f : (float)(conf / kept));
+        return new DecodeResult(sb.ToString(), kept == 0 ? 0f : (float)(conf / kept), t == 0 ? 0f : (float)(logSum / t), (float)mass);
     }
 }

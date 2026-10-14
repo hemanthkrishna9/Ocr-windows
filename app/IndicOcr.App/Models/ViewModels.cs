@@ -68,8 +68,7 @@ public sealed class PageVm : IDisposable
     public List<LineVm> Lines { get; }
 
     public OcrPage ToEditedPage()
-        => new OcrPage(Page.PageIndex, Page.Width, Page.Height,
-            Lines.Select(l => l.ToEdited()).ToList(), Page.Elapsed);
+        => Page with { Lines = Lines.Select(l => l.ToEdited()).ToList() };
 
     public string Text => string.Join(Environment.NewLine, Lines.Select(l => l.Text));
 

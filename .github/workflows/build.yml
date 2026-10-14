@@ -5,10 +5,42 @@ on:
   pull_request:
 
 jobs:
-  core-linux:
+  # Builds the ONNX models from pinned sources (see tools/models/prepare_models.sh) and caches them,
+  # so the model-backed integration tests run in CI. The cache key changes only when tools/models/ changes.
+  models:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Restore models cache
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: models-out
+          key: models-${{ hashFiles('tools/models/**') }}
+      - name: Build models (cache miss)
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: bash tools/models/prepare_models.sh "$RUNNER_TEMP/models-work" "$GITHUB_WORKSPACE/models-out"
+      - name: Verify model checksums
+        run: cd models-out && sha256sum -c ../tools/models/models.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: models
+          path: models-out
+          if-no-files-found: error
+          retention-days: 7
+
+  core-linux:
+    needs: models
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: models
+          path: models
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
@@ -16,13 +48,22 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y fonts-noto-core poppler-utils
       - name: Build core library
         run: dotnet build src/IndicOcr.Core -c Release
-      - name: Test core library (integration tests skip when models are absent)
+      - name: Test core library (all integration tests, with models)
+        env:
+          INDICOCR_MODELS: ${{ github.workspace }}/models
         run: dotnet test tests/IndicOcr.Core.Tests -c Release
+      - name: Build CLI
+        run: dotnet build src/IndicOcr.Cli -c Release -warnaserror
 
   windows:
+    needs: models
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: models
+          path: models
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
@@ -30,7 +71,10 @@ jobs:
         run: dotnet restore app/IndicOcr.App/IndicOcr.App.csproj -r win-x64 -p:Platform=x64
       - name: Build app (x64 Release)
         run: dotnet build app/IndicOcr.App/IndicOcr.App.csproj -c Release -r win-x64 -p:Platform=x64 --no-restore
-      - name: Test core library
+      - name: Test core library (all integration tests, with models and bundled Noto fonts)
+        env:
+          INDICOCR_MODELS: ${{ github.workspace }}/models
+          INDICOCR_TEST_FONTS: ${{ github.workspace }}/app/IndicOcr.App/fonts
         run: dotnet test tests/IndicOcr.Core.Tests -c Release
       - name: Publish app (self-contained x64)
         run: dotnet publish app/IndicOcr.App/IndicOcr.App.csproj -c Release -r win-x64 -p:Platform=x64 --self-contained true -o publish/win-x64

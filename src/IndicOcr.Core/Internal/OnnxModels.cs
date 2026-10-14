@@ -11,8 +11,8 @@ internal static class SessionFactory
         OrtEnv.Instance().DisableTelemetryEvents();
     }
 
-    /// <summary>Half the logical processors, 1..8 (measured: on a 4-vCPU/2-core box 2 threads beat 1, 3 and 4).</summary>
-    public static int DefaultThreads => Math.Clamp(Environment.ProcessorCount / 2, 1, 8);
+    /// <summary>Physical cores (SMT siblings excluded), 1..8. Measured: on a 4-core/no-SMT box 4 threads beat 2; SMT siblings add nothing.</summary>
+    public static int DefaultThreads => Math.Clamp(CpuTopology.PhysicalCores, 1, 8);
 
     public static InferenceSession Create(string path, OcrEngineOptions o, int intraThreads = -1)
     {
@@ -93,9 +93,9 @@ internal sealed class Recognizer : IDisposable
         if (od.Length == 3 && od[2] > 0) { _table.Validate(od[2], Path.GetFileName(onnxPath)); _validated = 1; }
     }
 
-    public List<(string Text, float Confidence)> Recognize(IReadOnlyList<Preprocess.LineCrop> crops)
+    public List<DecodeResult> Recognize(IReadOnlyList<Preprocess.LineCrop> crops)
     {
-        var res = new (string, float)[crops.Count];
+        var res = new DecodeResult[crops.Count];
         var order = Enumerable.Range(0, crops.Count).OrderBy(i => crops[i].Width).ToArray();
         int nBatches = (order.Length + _batch - 1) / _batch;
         // Longest batches first so the parallel workers finish together.
@@ -118,7 +118,7 @@ internal sealed class Recognizer : IDisposable
         return res.ToList();
     }
 
-    void RunBatch(InferenceSession s, int[] order, int b, (string, float)[] res, IReadOnlyList<Preprocess.LineCrop> crops)
+    void RunBatch(InferenceSession s, int[] order, int b, DecodeResult[] res, IReadOnlyList<Preprocess.LineCrop> crops)
     {
         var idx = order.Skip(b * _batch).Take(_batch).ToArray();
         var batch = idx.Select(i => crops[i]).ToList();

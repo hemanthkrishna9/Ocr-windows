@@ -13,6 +13,18 @@ public sealed record OcrPage(int PageIndex, int Width, int Height, IReadOnlyList
 {
     /// <summary>Line texts joined with \n.</summary>
     public string Text => string.Join("\n", Lines.Select(l => l.Text));
+
+    /// <summary>
+    /// Clockwise turn (0, 90, 180 or 270) the engine applied to make the page upright. Width, Height and every box refer to the
+    /// TURNED page (RecognizeFileAsync returns that bitmap). 0 when the page was already upright or rotation is disabled.
+    /// </summary>
+    public int RotationApplied { get; init; }
+
+    /// <summary>
+    /// Resolution of the source in dots per inch when it is known (PDF render dpi, or the dpi stored in the PNG/JPEG/BMP/TIFF file;
+    /// values under 100 are treated as "unknown"); null otherwise. The searchable PDF uses it for the page size and falls back to 300.
+    /// </summary>
+    public int? SourceDpi { get; init; }
 }
 
 public sealed record OcrEngineOptions
@@ -26,15 +38,20 @@ public sealed record OcrEngineOptions
     /// <summary>Let ONNX Runtime worker threads spin while waiting (lower latency, burns CPU).</summary>
     public bool AllowSpinning { get; init; } = true;
     /// <summary>
-    /// Language rule: when exactly one Indic language (Telugu, Hindi or Tamil, all PP-OCRv5) is selected together with English,
+    /// Language rule: when exactly one Indic language (Telugu, Hindi, Tamil or Kannada) is selected together with English,
     /// only the Indic recognizer runs on each line, because its dictionary already contains A-Z, a-z and 0-9.
     /// Set false to always run every selected recognizer and keep the most confident result.
     /// </summary>
     public bool EnglishViaIndicRecognizer { get; init; } = true;
-    /// <summary>ONNX Runtime intra-op threads per session; 0 = half the logical processors (at least 1, at most 8), because hyper-threads gave no speed-up on CPU inference.</summary>
+    /// <summary>ONNX Runtime intra-op threads per session; 0 = the number of PHYSICAL cores (1..8), because SMT siblings gave no speed-up on CPU inference.</summary>
     public int IntraOpThreads { get; init; } = 0;
     /// <summary>Minimum mean probability inside a detected box.</summary>
     public float BoxThreshold { get; init; } = 0.6f;
     /// <summary>Use the DirectML execution provider if the DirectML ONNX Runtime package is present; otherwise CPU.</summary>
     public bool UseDirectML { get; init; } = false;
+    /// <summary>
+    /// Detect pages that lie on their side or upside down and turn them upright (see <see cref="OcrPage.RotationApplied"/>).
+    /// Upright pages pay nothing for it; set false to never rotate.
+    /// </summary>
+    public bool AutoRotate { get; init; } = true;
 }

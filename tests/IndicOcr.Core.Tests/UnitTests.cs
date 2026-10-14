@@ -72,11 +72,10 @@ public class CtcTests
         finally { File.Delete(f); }
     }
 
-    [Fact]
+    [ModelsOnlyFact]
     public void Real_dictionaries_load_when_models_present()
     {
-        var dir = TestEnv.ModelsDir;
-        if (dir == null) return;
+        var dir = TestEnv.ModelsDir!;
         foreach (var p in new[] { "te", "hi", "ta", "kn", "en" })
         {
             var t = CharTable.Load(Path.Combine(dir, "dict_" + p + ".txt"));

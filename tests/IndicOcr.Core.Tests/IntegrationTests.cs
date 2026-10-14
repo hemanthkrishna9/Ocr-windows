@@ -112,12 +112,17 @@ public class IntegrationTests
         Assert.True(m < 0.05, $"mean CER {m:F3}");
     }
 
-    /// <summary>Kannada still uses the older PP-OCRv3 recognizer (no v5 Kannada model is available), so the bar is looser.</summary>
+    /// <summary>
+    /// BETA: Kannada still uses the older PP-OCRv3 recognizer (no PP-OCRv5 Kannada model is available), so the bar is far looser than for
+    /// the other languages (see OcrEngine.IsBeta). Measured mean CER 0.341 on these three lines; the bound is that plus a small margin,
+    /// so a real regression fails the test. Tighten it when a better Kannada model is adopted.
+    /// </summary>
     [ModelsFact]
     public void Kannada_lines_are_recognised_with_looser_bound_PP_OCRv3()
     {
+        Assert.True(OcrEngine.IsBeta(OcrLanguage.Kannada));
         double m = MeanCer(OcrLanguage.Kannada, KannadaLines, "NotoSansKannada-Regular.ttf", "kn");
-        Assert.True(m < 0.55, $"mean CER {m:F3}"); // measured 0.34
+        Assert.True(m < 0.40, $"mean CER {m:F3}"); // measured 0.341
     }
 
     static readonly string[] MixedTeluguEnglish =
@@ -267,6 +272,8 @@ public class IntegrationTests
         double cer = 0;
         for (int i = 0; i < Math.Min(lines.Count, last.Lines.Count); i++) cer += TestEnv.Cer(lines[i].Item1, last.Lines[i].Text);
         _out.WriteLine($"A4 {W}x{H} threads={Environment.ProcessorCount} cold={coldS:F2}s warm={string.Join(",", warm.Select(w => w.ToString("F2")))}s lines={last.Lines.Count}/{lines.Count} meanCER={cer / lines.Count:F3}");
+        // Loose timing guard (measured about 2 s on 4 cores): only a catastrophic regression, or a missing speed rule, trips it.
+        Assert.True(coldS < 15 && warm.Max() < 15, $"A4 page too slow: cold {coldS:F1}s, warm max {warm.Max():F1}s");
         Assert.True(last.Lines.Count >= lines.Count - 2);
         Assert.True(cer / lines.Count < 0.05, $"mean CER {cer / lines.Count:F3}");
     }

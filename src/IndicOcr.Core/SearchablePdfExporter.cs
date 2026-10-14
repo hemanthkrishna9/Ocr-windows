@@ -14,35 +14,72 @@ namespace IndicOcr.Core;
 /// </summary>
 public static class SearchablePdfExporter
 {
-    const double PxToPt = 72.0 / 300.0;
+    /// <summary>Resolution assumed when the page does not say (<see cref="OcrPage.SourceDpi"/> null).</summary>
+    public const int DefaultDpi = 300;
+    const double MaxPageSidePt = 14400; // PDF/Acrobat limit
     static readonly XStringFormat BaselineLeft = new() { Alignment = XStringAlignment.Near, LineAlignment = XLineAlignment.BaseLine };
 
+    /// <summary>
+    /// Writes the pages as a searchable PDF. The page size follows <see cref="OcrPage.SourceDpi"/> (the render dpi of a PDF input, or the
+    /// dpi stored in the image) so that a scanned A4 stays A4; it is 300 dpi when unknown. Each image is JPEG-encoded at quality 85.
+    /// </summary>
     public static void Write(IEnumerable<(SKBitmap Image, OcrPage Page)> pages, string path, string? fontsDirectory = null)
     {
         ArgumentNullException.ThrowIfNull(pages);
+        WriteCore(pages.Select(p => new PageInput(p.Image.Width, p.Image.Height, p.Page, () => EncodeJpeg(p.Image))), path, fontsDirectory);
+    }
+
+    /// <summary>
+    /// Like the bitmap overload, but takes JPEG bytes that the caller already holds (no re-encode, no quality loss). Each JPEG must be the
+    /// image the page's boxes refer to: its pixel size is taken from <see cref="OcrPage.Width"/> and <see cref="OcrPage.Height"/>.
+    /// </summary>
+    public static void Write(IEnumerable<(byte[] Jpeg, OcrPage Page)> pages, string path, string? fontsDirectory = null)
+    {
+        ArgumentNullException.ThrowIfNull(pages);
+        WriteCore(pages.Select(p => new PageInput(p.Page.Width, p.Page.Height, p.Page, () => p.Jpeg)), path, fontsDirectory);
+    }
+
+    readonly record struct PageInput(int Width, int Height, OcrPage Page, Func<byte[]> Jpeg);
+
+    static byte[] EncodeJpeg(SKBitmap image)
+    {
+        using var skImg = SKImage.FromBitmap(image);
+        using var data = skImg.Encode(SKEncodedImageFormat.Jpeg, 85);
+        return data.ToArray();
+    }
+
+    /// <summary>Points per pixel for a page: 72 / dpi, shrunk if the page would exceed the 14400 pt PDF limit.</summary>
+    internal static double PointsPerPixel(int width, int height, int? dpi)
+    {
+        double k = 72.0 / (dpi is > 0 ? dpi.Value : DefaultDpi);
+        double longSide = Math.Max(width, height) * k;
+        return longSide > MaxPageSidePt ? k * MaxPageSidePt / longSide : k;
+    }
+
+    static void WriteCore(IEnumerable<PageInput> pages, string path, string? fontsDirectory)
+    {
         TextExporter.EnsureDirectory(path);
         PdfFonts.Configure(fontsDirectory);
 
         using var doc = new PdfDocument();
         int count = 0;
-        foreach (var (image, page) in pages)
+        foreach (var input in pages)
         {
             count++;
-            double wPt = image.Width * PxToPt, hPt = image.Height * PxToPt;
+            double k = PointsPerPixel(input.Width, input.Height, input.Page.SourceDpi);
+            double wPt = input.Width * k, hPt = input.Height * k;
             var pdfPage = doc.AddPage();
             pdfPage.Width = XUnit.FromPoint(wPt);
             pdfPage.Height = XUnit.FromPoint(hPt);
 
             using (var gfx = XGraphics.FromPdfPage(pdfPage))
             {
-                using (var skImg = SKImage.FromBitmap(image))
-                using (var data = skImg.Encode(SKEncodedImageFormat.Jpeg, 85))
-                using (var ms = new MemoryStream(data.ToArray()))
+                using (var ms = new MemoryStream(input.Jpeg()))
                 using (var xi = XImage.FromStream(ms))
                     gfx.DrawImage(xi, 0, 0, wPt, hPt);
 
-                foreach (var line in page.Lines)
-                    DrawInvisibleLine(gfx, line);
+                foreach (var line in input.Page.Lines)
+                    DrawInvisibleLine(gfx, line, k);
             }
             MakeTextInvisible(pdfPage);
         }
@@ -50,11 +87,11 @@ public static class SearchablePdfExporter
         doc.Save(path);
     }
 
-    static void DrawInvisibleLine(XGraphics gfx, OcrLine line)
+    static void DrawInvisibleLine(XGraphics gfx, OcrLine line, double pxToPt)
     {
         if (string.IsNullOrWhiteSpace(line.Text)) return;
-        double x = line.Box.Left * PxToPt, y = line.Box.Top * PxToPt;
-        double w = line.Box.Width * PxToPt, h = line.Box.Height * PxToPt;
+        double x = line.Box.Left * pxToPt, y = line.Box.Top * pxToPt;
+        double w = line.Box.Width * pxToPt, h = line.Box.Height * pxToPt;
         if (w <= 0.5 || h <= 0.5) return;
         double size = Math.Max(2, h * 0.8);
 

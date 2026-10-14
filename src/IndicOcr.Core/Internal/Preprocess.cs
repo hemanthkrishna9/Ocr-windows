@@ -6,15 +6,22 @@ namespace IndicOcr.Core.Internal;
 internal sealed class PixelImage : IDisposable
 {
     readonly SKBitmap _bmp;
+    readonly bool _owns;
     public int Width => _bmp.Width;
     public int Height => _bmp.Height;
     public ReadOnlySpan<byte> Pixels => _bmp.GetPixelSpan();
     public SKBitmap Bitmap => _bmp;
 
-    PixelImage(SKBitmap b) { _bmp = b; }
+    PixelImage(SKBitmap b, bool owns) { _bmp = b; _owns = owns; }
 
+    /// <summary>
+    /// Wraps an opaque BGRA bitmap as is (no copy: saves a full page of memory for a typical decoded scan; the caller keeps ownership
+    /// and must not dispose it while this image is in use); any other format is converted into a new opaque BGRA copy.
+    /// </summary>
     public static PixelImage From(SKBitmap src)
     {
+        if (src.ColorType == SKColorType.Bgra8888 && src.AlphaType == SKAlphaType.Opaque && src.RowBytes == src.Width * 4)
+            return new PixelImage(src, owns: false);
         var info = new SKImageInfo(src.Width, src.Height, SKColorType.Bgra8888, SKAlphaType.Premul);
         var dst = new SKBitmap(info);
         using (var canvas = new SKCanvas(dst))
@@ -23,10 +30,10 @@ internal sealed class PixelImage : IDisposable
             using var im = SKImage.FromBitmap(src);
             canvas.DrawImage(im, 0, 0, new SKSamplingOptions(SKFilterMode.Nearest), null);
         }
-        return new PixelImage(dst);
+        return new PixelImage(dst, owns: true);
     }
 
-    public void Dispose() => _bmp.Dispose();
+    public void Dispose() { if (_owns) _bmp.Dispose(); }
 }
 
 internal static class Preprocess

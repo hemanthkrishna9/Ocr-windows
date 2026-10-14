@@ -24,7 +24,7 @@ public sealed partial class MainWindow : Window
         (OcrLanguage.Telugu, "Telugu"),
         (OcrLanguage.Hindi, "Hindi / Marathi"),
         (OcrLanguage.Tamil, "Tamil"),
-        (OcrLanguage.Kannada, "Kannada"),
+        (OcrLanguage.Kannada, "Kannada (beta)"),
         (OcrLanguage.English, "English"),
     };
 
@@ -129,6 +129,7 @@ public sealed partial class MainWindow : Window
                 Tag = lang,
             };
             if (!enabled) ToolTipService.SetToolTip(cb, "No model installed for this language");
+            else if (lang == OcrLanguage.Kannada) ToolTipService.SetToolTip(cb, "Uses an older model; expect many errors");
             cb.Checked += Language_Changed;
             cb.Unchecked += Language_Changed;
             _langChecks[lang] = cb;
