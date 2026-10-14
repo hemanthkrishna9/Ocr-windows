@@ -1206,6 +1206,319 @@ public class RedactionTests
         // The control proves the harness works; the Indic-digit rates are only reported (see Redactor docs for the user-facing warning).
         Assert.True(controlRate >= 0.8, $"control (ASCII digits) detection rate {controlRate:P0}");
     }
+
+    // ---- monotone row joining (union of per-line and per-row detection) -----------------------------------------------------------
+
+    static OcrLine Cell(string t, float x, float y, float w, float h = 40)
+    {
+        var b = new RectangleF(x, y, w, h);
+        return new OcrLine(t, 0.9f, OcrLanguage.English, b, new[] { new PointF(b.Left, b.Top), new PointF(b.Right, b.Top), new PointF(b.Right, b.Bottom), new PointF(b.Left, b.Bottom) });
+    }
+    static OcrPage Cells(params OcrLine[] ls) => new(0, 4000, 4000, ls.ToList(), TimeSpan.Zero);
+    static string[] Masked(OcrPage p, RedactionOptions? o = null) => Redactor.MaskText(p, Redactor.Find(p, o)).Lines.Select(l => l.Text).ToArray();
+
+    [Fact]
+    public void Valid_aadhaar_is_fully_masked_whatever_date_cell_follows()
+    {
+        var number = Group(Aadhaar("23413413461")); // checksum-valid
+        int total = 0;
+        foreach (int dd in Enumerable.Range(1, 28)) foreach (int mm in Enumerable.Range(1, 12)) foreach (int yy in new[] { 2019, 2020, 2021, 2022, 2023, 2024 })
+        {
+            var page = Cells(Cell("Aadhaar No " + number, 100, 100, 600), Cell($"{dd:00} {mm:00} {yy}", 760, 100, 250));
+            var m = Masked(page);
+            total++;
+            Assert.True(m[0].EndsWith(new string('X', 14)) && !m[0].Any(char.IsDigit), $"{dd:00} {mm:00} {yy} left digits: {m[0]}");
+        }
+        Assert.True(total > 2000);
+    }
+
+    [Fact]
+    public void Shifted_window_is_never_preferred_over_the_aligned_one_for_the_reported_text()
+    {
+        var number = Group(Aadhaar("23413413461"));
+        var page = Cells(Cell(number, 100, 100, 400), Cell("01 01 2023", 560, 100, 250));
+        var f = Redactor.Find(page);
+        Assert.Contains(f, x => x.LineIndex == 0 && x.Start == 0 && x.Length == 14);
+        Assert.Equal("XXXX XXXX " + number[10..], f.First().MaskedText);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Unverified_aadhaar_in_a_table_cell_is_found_with_neighbours(bool vid)
+    {
+        var o = new RedactionOptions { Vid = vid };
+        var page = Cells(Cell("Ravi", 100, 100, 100), Cell("2341 2341 2347", 300, 100, 400), Cell("45", 800, 100, 60));
+        var m = Masked(page, o);
+        Assert.Equal("Ravi", m[0]); Assert.Equal("45", m[2]);
+        Assert.Equal(new string('X', 14), m[1]);
+        Assert.All(Redactor.Find(page, o), f => Assert.False(f.Verified));
+    }
+
+    [Fact]
+    public void Two_adjacent_unverified_aadhaar_cells_are_both_masked()
+    {
+        var m = Masked(Cells(Cell("2341 2341 2347", 100, 100, 400), Cell("2341 2341 2348", 560, 100, 400)));
+        Assert.Equal(new string('X', 14), m[0]);
+        Assert.Equal(new string('X', 14), m[1]);
+    }
+
+    [Fact]
+    public void Unverified_aadhaar_split_over_three_lines_is_still_masked()
+    {
+        var m = Masked(Cells(Cell("2341", 100, 100, 120), Cell("2341", 260, 100, 120), Cell("2347", 420, 100, 120)));
+        Assert.Equal(new[] { "XXXX", "XXXX", "XXXX" }, m);
+    }
+
+    [Fact]
+    public void Vid_off_valid_aadhaar_next_to_any_four_digit_cell_is_still_masked()
+    {
+        var number = Group(Aadhaar("23413413461"));
+        var o = new RedactionOptions { Vid = false };
+        int bad = 0;
+        for (int n = 1000; n < 10000; n++)
+        {
+            var m = Masked(Cells(Cell(number, 100, 100, 400), Cell(n.ToString(), 560, 100, 150)), o);
+            if (m[0].Any(char.IsDigit)) bad++;
+        }
+        Assert.Equal(0, bad);
+    }
+
+    [Fact]
+    public void Vid_off_still_leaves_a_whole_vid_alone()
+    {
+        string v15 = "234134134610005"; // 15 payload digits
+        string vidNo = v15 + PiiVerhoeff.CheckDigit(v15);
+        var page = PageOf($"VID {vidNo[..4]} {vidNo[4..8]} {vidNo[8..12]} {vidNo[12..]}");
+        Assert.Empty(Redactor.Find(page, new RedactionOptions { Vid = false }));
+        Assert.Single(Redactor.Find(page, new RedactionOptions { Vid = true }));
+    }
+
+    [Fact]
+    public void Currency_marker_in_the_previous_cell_does_not_hide_a_phone_number()
+    {
+        Assert.Equal(new[] { "Amount Rs.", "XXXXXXXXXX" }, Masked(Cells(Cell("Amount Rs.", 100, 100, 250), Cell("9849012345", 400, 100, 300))));
+        Assert.Equal(new[] { "Rs. 500", "XXXXXXXXXX" }, Masked(Cells(Cell("Rs. 500", 100, 100, 200), Cell("9849012345", 400, 100, 300))));
+        // within one line the amount guard still holds
+        Assert.Empty(Redactor.Find(PageOf("Amount Rs. 9849012345")));
+    }
+
+    [Fact]
+    public void Continuation_match_that_partly_overlaps_an_earlier_one_adds_the_rest()
+    {
+        // "Aadhaar No:" over "2341 2341 2347" plus a cell that makes the per-line view see only part of the number
+        var page = Cells(Cell("Aadhaar No:", 100, 100, 300), Cell("2341 2341", 100, 160, 250), Cell("2347", 400, 160, 120));
+        var m = Masked(page);
+        Assert.Equal("Aadhaar No:", m[0]);
+        Assert.Equal("XXXXXXXXX", m[1]);
+        Assert.Equal("XXXX", m[2]);
+    }
+
+    [Fact]
+    public void Find_is_monotone_joining_cells_never_removes_a_single_line_finding()
+    {
+        var texts = new[] { "Aadhaar No 2341 2341 2346", "9849012345", "ABCPE1234F", "2341 2341 2347", "UID 2341 2341 2347", "Mob 98490 12345" };
+        var neighbours = new[] { "", "45", "2023", "01 01 2023", "Rs.", "500032", "x@y.com", "12/", "9849012345" };
+        foreach (var t in texts) foreach (var n in neighbours)
+        {
+            var alone = Redactor.Find(Cells(Cell(t, 100, 100, 700)));
+            var joined = Cells(Cell(t, 100, 100, 700), Cell(n.Length == 0 ? "z" : n, 850, 100, 250));
+            var f = Redactor.Find(joined);
+            foreach (var a in alone)
+                for (int i = a.Start; i < a.Start + a.Length; i++)
+                    Assert.True(f.Any(x => x.LineIndex == 0 && x.Start <= i && i < x.Start + x.Length), $"{t} + {n}: char {i} uncovered");
+        }
+    }
+
+    [Fact]
+    public void MaskTables_masks_ids_in_cells_alone_and_across_neighbours_and_keeps_the_rest()
+    {
+        var cells = new List<OcrTableCell>
+        {
+            new(0, 0, 1, 1, "Name", new RectangleF(0, 0, 100, 40)),
+            new(0, 1, 1, 1, "Aadhaar", new RectangleF(110, 0, 200, 40)),
+            new(1, 0, 1, 1, "Ravi", new RectangleF(0, 50, 100, 40)),
+            new(1, 1, 1, 1, "2341 2341 2347", new RectangleF(110, 50, 300, 40)),
+            new(1, 2, 1, 1, "45", new RectangleF(420, 50, 60, 40)),
+            new(2, 0, 1, 1, "Amount Rs.", new RectangleF(0, 100, 150, 40)),
+            new(2, 1, 1, 1, "9849012345", new RectangleF(160, 100, 250, 40)),
+            new(3, 0, 1, 1, "", new RectangleF(0, 150, 100, 40)),
+        };
+        var t = new OcrTable(new RectangleF(0, 0, 500, 200), 4, 3, cells) { HasRulings = true };
+        var r = Redactor.MaskTables(new[] { t });
+        var g = r[0].ToGrid();
+        Assert.Equal("Name", g[0, 0]); Assert.Equal("Ravi", g[1, 0]); Assert.Equal("45", g[1, 2]);
+        Assert.Equal(new string('X', 14), g[1, 1]);
+        Assert.Equal("XXXXXXXXXX", g[2, 1]);
+        Assert.Equal("Amount Rs.", g[2, 0]);
+        Assert.True(r[0].HasRulings); Assert.Equal(t.Bounds, r[0].Bounds);
+        Assert.Equal("2341 2341 2347", t.ToGrid()[1, 1]); // input untouched
+        Assert.Empty(Redactor.MaskTables(Array.Empty<OcrTable>()));
+        Assert.Throws<ArgumentException>(() => Redactor.MaskTables(new[] { t }, null, '7'));
+    }
+
+    static OcrTable OneCellTable(string text, params (string Text, RectangleF Box)[] others)
+    {
+        var cells = new List<OcrTableCell> { new(0, 0, 1, 1, text, new RectangleF(0, 0, 300, 120)) };
+        for (int i = 0; i < others.Length; i++) cells.Add(new(0, i + 1, 1, 1, others[i].Text, others[i].Box));
+        return new OcrTable(new RectangleF(0, 0, 900, 200), 1, cells.Count, cells);
+    }
+
+    [Theory]
+    [InlineData("2341 2341\n2346", "XXXXXXXXX\nXXXX")]
+    [InlineData("98490\n12345", "XXXXX\nXXXXX")]
+    [InlineData("Ph: 98490\n12345 ok", "Ph: XXXXX\nXXXXX ok")]
+    public void MaskTables_masks_a_number_wrapped_inside_one_cell_and_keeps_the_line_feed(string cell, string expected)
+    {
+        var r = Redactor.MaskTables(new[] { OneCellTable(cell) });
+        Assert.Equal(expected, r[0].Cells[0].Text);
+    }
+
+    [Fact]
+    public void MaskTables_wrapped_checksum_valid_aadhaar_is_masked()
+    {
+        var a = Aadhaar("23412341234");
+        var r = Redactor.MaskTables(new[] { OneCellTable($"{a[..4]} {a[4..8]}\n{a[8..]}") });
+        Assert.Equal("XXXXXXXXX\nXXXX", r[0].Cells[0].Text);
+    }
+
+    [Fact]
+    public void Known_gap_number_wrapped_over_two_stacked_page_lines_is_not_joined()
+    {
+        // Documented limitation of Redactor.Find (see its XML docs): the halves of a stacked wrapped phone number are each too short.
+        var page = PageOf("98490", "12345");
+        Assert.Empty(Redactor.Find(page));
+    }
+
+    [Fact]
+    public void MaskTables_leaves_what_the_user_unticked_and_masks_the_rest()
+    {
+        var cells = new List<OcrTableCell>
+        {
+            new(0, 0, 1, 1, "9849012345", new RectangleF(0, 0, 300, 50)),
+            new(1, 0, 1, 1, "9876543210", new RectangleF(0, 100, 300, 50)),
+        };
+        var t = new OcrTable(new RectangleF(0, 0, 400, 200), 2, 1, cells);
+        // the page-level finding of the first number, as the review dialog would list it
+        var page = new OcrPage(0, 400, 200, new List<OcrLine>
+        {
+            new("9849012345", 0.9f, OcrLanguage.English, new RectangleF(0, 0, 300, 50), new[] { new PointF(0, 0), new PointF(300, 0), new PointF(300, 50), new PointF(0, 50) }),
+        }, TimeSpan.Zero);
+        var unticked = Redactor.Find(page);
+        Assert.Single(unticked);
+        var r = Redactor.MaskTables(new[] { t }, null, 'X', page, unticked);
+        Assert.Equal("9849012345", r[0].Cells[0].Text);
+        Assert.Equal("XXXXXXXXXX", r[0].Cells[1].Text);
+        Assert.Equal("XXXXXXXXXX", Redactor.MaskTables(new[] { t })[0].Cells[0].Text);
+        Assert.Equal("XXXXXXXXXX", Redactor.MaskTables(new[] { t }, null, 'X', page, Array.Empty<PiiFinding>())[0].Cells[0].Text);
+    }
+
+    static OcrLine KLine(string t, float x, float y, float w, float h = 40) =>
+        new(t, 0.9f, OcrLanguage.English, new RectangleF(x, y, w, h), new[] { new PointF(x, y), new PointF(x + w, y), new PointF(x + w, y + h), new PointF(x, y + h) });
+
+    static OcrTable KTable(params (string T, RectangleF B)[] cs) =>
+        new(new RectangleF(0, 0, 4000, 400), 1, cs.Length, cs.Select((c, i) => new OcrTableCell(0, i, 1, 1, c.T, c.B)).ToList());
+
+    [Theory]
+    [InlineData(600f, 300f)]
+    [InlineData(2000f, 200f)]
+    [InlineData(3000f, 200f)]
+    [InlineData(4000f, 180f)]
+    public void MaskTables_keep_never_leaves_a_different_number_in_a_neighbouring_cell(float lineW, float cellW)
+    {
+        string pre = new string('a', 40) + " ";
+        string txt = pre + "9849012345 9876543210 " + new string('b', 40);
+        var page = new OcrPage(0, 4000, 4000, new List<OcrLine> { KLine(txt, 0, 100, lineW) }, TimeSpan.Zero);
+        var unt = Redactor.Find(page).Where(f => txt.Substring(f.Start, f.Length).Contains("98490")).ToList();
+        Assert.NotEmpty(unt);
+        float ax = lineW / txt.Length * pre.Length;
+        var cellA = new RectangleF(ax, 100, cellW, 40);
+        var cellB = new RectangleF(ax + cellW + 20, 100, cellW, 40);
+        var r = Redactor.MaskTables(new[] { KTable(("9849012345", cellA), ("9876543210", cellB)) }, null, 'X', page, unt);
+        Assert.Equal("9849012345", r[0].Cells[0].Text);
+        Assert.Equal("XXXXXXXXXX", r[0].Cells[1].Text);
+    }
+
+    [Fact]
+    public void MaskTables_keep_masks_the_other_number_in_a_cell_that_holds_both()
+    {
+        var page = new OcrPage(0, 4000, 4000, new List<OcrLine> { KLine("9849012345", 100, 100, 300) }, TimeSpan.Zero);
+        var unt = Redactor.Find(page);
+        var box = new RectangleF(100, 100, 700, 40);
+        var r = Redactor.MaskTables(new[] { KTable(("9849012345 9876543210", box)) }, null, 'X', page, unt);
+        Assert.Equal("9849012345 XXXXXXXXXX", r[0].Cells[0].Text);
+        r = Redactor.MaskTables(new[] { KTable(("9876543210 9849012345", box)) }, null, 'X', page, unt);
+        Assert.Equal("XXXXXXXXXX 9849012345", r[0].Cells[0].Text);
+    }
+
+    [Fact]
+    public void MaskTables_keep_masks_the_same_value_far_from_the_unticked_line_and_without_a_page()
+    {
+        var page = new OcrPage(0, 4000, 4000, new List<OcrLine> { KLine("9849012345", 100, 100, 300) }, TimeSpan.Zero);
+        var unt = Redactor.Find(page);
+        var far = Redactor.MaskTables(new[] { KTable(("9849012345", new RectangleF(100, 900, 300, 40))) }, null, 'X', page, unt);
+        Assert.Equal("XXXXXXXXXX", far[0].Cells[0].Text);
+        var nopage = Redactor.MaskTables(new[] { KTable(("9849012345", new RectangleF(100, 100, 300, 40))) }, null, 'X', null, unt);
+        Assert.Equal("XXXXXXXXXX", nopage[0].Cells[0].Text);
+    }
+
+    [Fact]
+    public void MaskTables_keep_is_decided_per_group_for_a_number_split_over_two_cells()
+    {
+        var page = new OcrPage(0, 4000, 4000, new List<OcrLine> { KLine("98490 12345", 100, 100, 300) }, TimeSpan.Zero);
+        var unt = Redactor.Find(page);
+        Assert.NotEmpty(unt);
+        var same = Redactor.MaskTables(new[] { KTable(("98490", new RectangleF(100, 100, 140, 40)), ("12345", new RectangleF(260, 100, 140, 40))) }, null, 'X', page, unt);
+        Assert.Equal("98490", same[0].Cells[0].Text);
+        Assert.Equal("12345", same[0].Cells[1].Text);
+        var other = Redactor.MaskTables(new[] { KTable(("98490", new RectangleF(100, 100, 140, 40)), ("99999", new RectangleF(260, 100, 140, 40))) }, null, 'X', page, unt);
+        Assert.Equal("XXXXX", other[0].Cells[0].Text);
+        Assert.Equal("XXXXX", other[0].Cells[1].Text);
+    }
+
+    [Fact]
+    public void MaskTables_keep_leaves_a_unticked_number_after_a_keyword_line_feed_in_one_cell_like_the_page_does()
+    {
+        var page = new OcrPage(0, 4000, 4000, new List<OcrLine> { KLine("9849012345", 100, 100, 300) }, TimeSpan.Zero);
+        var unt = Redactor.Find(page);
+        var r = Redactor.MaskTables(new[] { KTable(("Rs.\n9849012345", new RectangleF(100, 100, 300, 80))) }, null, 'X', page, unt);
+        Assert.Equal("Rs.\n9849012345", r[0].Cells[0].Text);
+    }
+
+    [Fact]
+    public void Vid_off_unverified_vid_guess_from_aadhaar_keyword_does_not_suppress_a_valid_aadhaar()
+    {
+        var a = Aadhaar("23412341234");
+        var o = new RedactionOptions { Vid = false };
+        var f = Assert.Single(Find($"Aadhaar No: {Group(a)} 2023", o));
+        Assert.Equal(PiiKind.Aadhaar, f.Kind);
+        Assert.Equal(12, f.Start);
+        Assert.True(f.Length >= 14); // the whole valid number is covered (the neighbouring "2023" may be taken with it: over-redaction is accepted)
+    }
+
+    [Fact]
+    public void Vid_off_real_vid_still_suppresses_its_first_twelve_digits()
+    {
+        var v = Aadhaar("234123412341234");
+        Assert.Equal(16, v.Length);
+        Assert.Empty(Find($"VID: {v[..4]} {v[4..8]} {v[8..12]} {v[12..]}", new RedactionOptions { Vid = false }));
+        Assert.Empty(Find($"{v[..4]} {v[4..8]} {v[8..12]} {v[12..]}", new RedactionOptions { Vid = false }));
+    }
+
+    [Fact]
+    public void Group_label_prefers_a_match_inside_one_line_over_a_window_across_cells()
+    {
+        var a = Aadhaar("23412341234");
+        OcrLine L(string t, float x) => new(t, 0.9f, OcrLanguage.English, new RectangleF(x, 100, 120, 50),
+            new[] { new PointF(x, 100), new PointF(x + 120, 100), new PointF(x + 120, 150), new PointF(x, 150) });
+        var lines = new List<OcrLine> { new("Aadhaar No:", 0.9f, OcrLanguage.English, new RectangleF(0, 100, 100, 50), new[] { new PointF(0, 100), new PointF(100, 100), new PointF(100, 150), new PointF(0, 150) }), L("2009", 110), L(Group(a), 240) };
+        lines[2] = new OcrLine(Group(a), 0.9f, OcrLanguage.English, new RectangleF(240, 100, 300, 50), new[] { new PointF(240, 100), new PointF(540, 100), new PointF(540, 150), new PointF(240, 150) });
+        var page = new OcrPage(0, 1000, 300, lines, TimeSpan.Zero);
+        var f = Redactor.Find(page);
+        Assert.NotEmpty(f);
+        Assert.All(f, x => Assert.Equal(PiiKind.Aadhaar, x.Kind));
+        Assert.All(f, x => Assert.EndsWith(a[8..], x.MaskedText));
+    }
 }
 
 static class RectExt

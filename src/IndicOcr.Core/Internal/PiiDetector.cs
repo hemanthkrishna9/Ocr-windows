@@ -4,7 +4,9 @@ using System.Text.RegularExpressions;
 namespace IndicOcr.Core.Internal;
 
 /// <summary>A match inside one (virtual) line's text. Indexes are UTF-16 offsets into the ORIGINAL text. <paramref name="Verified"/> is false when the match passed on keyword or layout evidence only (checksum failed or OCR-corrected characters).</summary>
-internal readonly record struct PiiMatch(PiiKind Kind, int Start, int Length, bool Verified = true);
+/// <param name="Prio">Lower is more specific: 0 verified Aadhaar, 1 verified VID, 2 phone, 3 unverified Aadhaar/VID, 4 PAN, 5 e-mail.</param>
+/// <param name="Aligned">An Aadhaar/VID window made of whole printed groups of four (4-4-4, 4-4-4-4), as opposed to a window shifted across group boundaries.</param>
+internal readonly record struct PiiMatch(PiiKind Kind, int Start, int Length, bool Verified = true, int Prio = 0, bool Aligned = false);
 
 /// <summary>
 /// Finds Aadhaar, VID, PAN, phone and email patterns in one line of text (which may be several OCR lines joined). Works on a
@@ -137,46 +139,75 @@ internal static class PiiDetector
         return chars == null ? s : new string(chars);
     }
 
-    public static List<PiiMatch> Find(string text, RedactionOptions o)
+    /// <summary>
+    /// Every candidate match in <paramref name="text"/>. Overlapping candidates are ALL returned (no winner is chosen), because dropping
+    /// one could leave part of a number visible; the caller masks the union of their spans and uses <see cref="Better"/> to pick the
+    /// one it reports. <paramref name="sourceStarts"/> holds where each source OCR line starts when <paramref name="text"/> is several
+    /// lines joined; context guards (currency marker, "four groups" shape) then apply within one source line only.
+    /// </summary>
+    public static List<PiiMatch> Find(string text, RedactionOptions o, IReadOnlyList<int>? sourceStarts = null)
     {
         var s0 = NormalizeDigits(text);
         var kws = Keywords(s0);
         var s = FixConfusions(s0, kws);
-        // Priority: 0 verified Aadhaar, 1 verified VID, 2 phone, 3 unverified Aadhaar/VID, 4 PAN, 5 e-mail.
-        var cands = new List<(int Prio, PiiMatch M)>();
+        var cands = new List<PiiMatch>();
+        sourceStarts ??= new[] { 0 };
 
-        if (o.Aadhaar || o.Vid || o.Phone) Numbers(s, kws, o, cands);
+        if (o.Aadhaar || o.Vid || o.Phone) Numbers(s, kws, o, cands, sourceStarts);
         if (o.Pan)
         {
-            foreach (Match m in PanRx.Matches(s0)) cands.Add((4, new PiiMatch(PiiKind.Pan, m.Index, m.Length)));
+            foreach (Match m in PanRx.Matches(s0)) cands.Add(new PiiMatch(PiiKind.Pan, m.Index, m.Length, true, 4));
             foreach (Match m in PanLooseRx.Matches(s0))
             {
                 if (!KeywordNear(s0, kws, m.Index, "N")) continue;
                 var fixedPan = FixPan(m.Value);
                 if (fixedPan == null) continue;
-                cands.Add((4, new PiiMatch(PiiKind.Pan, m.Index, m.Length, m.Value.Replace(" ", "") == fixedPan)));
+                cands.Add(new PiiMatch(PiiKind.Pan, m.Index, m.Length, m.Value.Replace(" ", "") == fixedPan, 4));
             }
         }
         if (o.Email)
-            foreach (Match m in EmailRx.Matches(s0)) cands.Add((5, new PiiMatch(PiiKind.Email, m.Index, m.Length)));
+            foreach (Match m in EmailRx.Matches(s0)) cands.Add(new PiiMatch(PiiKind.Email, m.Index, m.Length, true, 5));
 
-        // Longest first (so a 16-digit VID beats the 12-digit Aadhaar inside it), then priority, then leftmost; keep non-overlapping.
-        var accepted = new List<PiiMatch>();
-        foreach (var (_, m) in cands.OrderByDescending(c => c.M.Length).ThenBy(c => c.Prio).ThenBy(c => c.M.Start))
-            if (!accepted.Any(a => m.Start < a.Start + a.Length && a.Start < m.Start + m.Length)) accepted.Add(m);
-        // With VID detection off the 16-digit candidates still took part above, so the 12 digits inside a VID are not reported as an Aadhaar.
-        if (!o.Vid) accepted.RemoveAll(m => m.Kind == PiiKind.Vid);
-        accepted.Sort((a, b) => a.Start.CompareTo(b.Start));
-        return accepted;
+        // With VID detection off, a candidate inside a 16-digit VID that sits in ONE source line is dropped with it (the first twelve
+        // digits of a VID are not an Aadhaar number). A 16-digit window across several source lines may be an Aadhaar number plus
+        // a neighbouring cell, so it suppresses nothing: over-redacting beats leaving digits visible.
+        if (!o.Vid)
+        {
+            // Only a VID that is checksum-valid or has an explicit VID keyword suppresses; an "Aadhaar"-keyword-only guess does not, and a
+            // checksum-valid Aadhaar is never suppressed ("Aadhaar No: 2341 2341 2346 2023" must still mask the Aadhaar).
+            var vids = cands.Where(m => m.Kind == PiiKind.Vid && SourceOf(sourceStarts, m.Start) == SourceOf(sourceStarts, m.Start + m.Length - 1)
+                                        && (m.Verified || KeywordNear(s, kws, m.Start, "V"))).ToList();
+            cands.RemoveAll(m => m.Kind != PiiKind.Vid && !(m.Kind == PiiKind.Aadhaar && m.Verified) && vids.Any(v => m.Start < v.Start + v.Length && v.Start < m.Start + m.Length));
+            cands.RemoveAll(m => m.Kind == PiiKind.Vid);
+        }
+        cands.Sort((a, b) => a.Start.CompareTo(b.Start));
+        return cands;
     }
 
-    static void Numbers(string s, List<Kw> kws, RedactionOptions o, List<(int Prio, PiiMatch M)> cands)
+    /// <summary>True when <paramref name="a"/> should be the one reported for a region both cover: windows aligned to printed groups first, then the longer, then the more specific kind, then the leftmost.</summary>
+    public static bool Better(PiiMatch a, PiiMatch b)
+    {
+        if (a.Aligned != b.Aligned) return a.Aligned;
+        if (a.Length != b.Length) return a.Length > b.Length;
+        if (a.Prio != b.Prio) return a.Prio < b.Prio;
+        return a.Start < b.Start;
+    }
+
+    static int SourceOf(IReadOnlyList<int> starts, int pos)
+    {
+        int k = 0;
+        for (int i = 1; i < starts.Count; i++) if (starts[i] <= pos) k = i; else break;
+        return k;
+    }
+
+    static void Numbers(string s, List<Kw> kws, RedactionOptions o, List<PiiMatch> cands, IReadOnlyList<int> srcStarts)
     {
         var chains = DigitChain.Matches(s).Select(m => (Start: m.Index, End: m.Index + m.Length, Digits: m.Value.Count(c => c >= '0' && c <= '9'))).ToList();
         foreach (Match chain in DigitChain.Matches(s))
         {
             var groups = GroupRx.Matches(chain.Value);
             bool grouped444 = groups.Count == 3 && groups.All(g => g.Length == 4) && !chain.Value.Contains('.');
+            var src = groups.Select(g => SourceOf(srcStarts, chain.Index + g.Index)).ToArray();
             for (int i = 0; i < groups.Count; i++)
             {
                 var digits = new StringBuilder();
@@ -192,32 +223,37 @@ internal static class PiiDetector
                     int end = chain.Index + groups[j].Index + groups[j].Length;
                     var d = digits.ToString();
                     bool whole = i == 0 && j == groups.Count - 1;
+                    bool allFour = true;
+                    for (int g = i; g <= j; g++) if (groups[g].Length != 4) allFour = false;
+                    allFour &= !dotSep;
+                    // exactly three groups of four that make up everything one source line contributes to this chain ("Ravi | 2341 2341 2347 | 45")
+                    bool sub444 = allFour && j - i == 2 && src[i] == src[j] && (i == 0 || src[i - 1] != src[i]) && (j == groups.Count - 1 || src[j + 1] != src[j]);
 
                     if (d.Length == 12 && o.Aadhaar)
                     {
-                        if (Isolated(s, start, end, chains))
+                        if (Isolated(s, start, end, chains, srcStarts))
                         {
-                            if (d[0] >= '2' && PiiVerhoeff.IsValid(d)) cands.Add((0, new PiiMatch(PiiKind.Aadhaar, start, end - start)));
-                            else if (KeywordNear(s, kws, start, "A") || (whole && grouped444 && d[0] >= '2'))
-                                cands.Add((3, new PiiMatch(PiiKind.Aadhaar, start, end - start, false)));
+                            if (d[0] >= '2' && PiiVerhoeff.IsValid(d)) cands.Add(new PiiMatch(PiiKind.Aadhaar, start, end - start, true, 0, allFour));
+                            else if (KeywordNear(s, kws, start, "A") || ((whole && grouped444 || sub444) && d[0] >= '2'))
+                                cands.Add(new PiiMatch(PiiKind.Aadhaar, start, end - start, false, 3, allFour));
                         }
                     }
                     else if (d.Length == 16 && (o.Vid || o.Aadhaar))
                     {
-                        if (Isolated(s, start, end, chains))
+                        if (Isolated(s, start, end, chains, srcStarts))
                         {
-                            if (d[0] >= '2' && PiiVerhoeff.IsValid(d)) cands.Add((1, new PiiMatch(PiiKind.Vid, start, end - start)));
-                            else if (KeywordNear(s, kws, start, "VA")) cands.Add((3, new PiiMatch(PiiKind.Vid, start, end - start, false)));
+                            if (d[0] >= '2' && PiiVerhoeff.IsValid(d)) cands.Add(new PiiMatch(PiiKind.Vid, start, end - start, true, 1, allFour));
+                            else if (KeywordNear(s, kws, start, "VA")) cands.Add(new PiiMatch(PiiKind.Vid, start, end - start, false, 3, allFour));
                         }
                     }
-                    if (o.Phone && IsPhoneDigits(d) && Isolated(s, start, end, chains))
+                    if (o.Phone && IsPhoneDigits(d) && Isolated(s, start, end, chains, srcStarts))
                     {
                         int ps = start;
                         // keep a "+" (as in +91) inside the redaction
                         int k = ps - 1;
                         while (k >= 0 && (s[k] == ' ' || s[k] == '(')) k--;
                         if (k >= 0 && s[k] == '+') ps = k;
-                        cands.Add((2, new PiiMatch(PiiKind.Phone, ps, end - ps)));
+                        cands.Add(new PiiMatch(PiiKind.Phone, ps, end - ps, true, 2));
                     }
                 }
             }
@@ -269,7 +305,7 @@ internal static class PiiDetector
     /// token (survey numbers; "9849012345/9849012346" is two phone numbers and stays), a "." or "," joining them to another digit
     /// (amounts, decimals), or a currency marker in front (Rs. 9876543210).
     /// </summary>
-    static bool Isolated(string s, int start, int end, List<(int Start, int End, int Digits)> chains)
+    static bool Isolated(string s, int start, int end, List<(int Start, int End, int Digits)> chains, IReadOnlyList<int> srcStarts)
     {
         if (start > 0)
         {
@@ -277,7 +313,9 @@ internal static class PiiDetector
             if (IsAsciiLetter(p) || p == '_') return false;
             if (p == '/' && !SlashNeighbourIsNumber(s, start - 1, chains, before: true)) return false;
             if ((p == '.' || p == ',') && start >= 2 && s[start - 2] >= '0' && s[start - 2] <= '9') return false;
-            if (CurrencyRx.IsMatch(s.Substring(0, start))) return false;
+            // a marker in the PREVIOUS cell ("Amount Rs." | "9849012345") says nothing about this one: look within the same source line only
+            int lineStart = srcStarts[SourceOf(srcStarts, start)];
+            if (CurrencyRx.IsMatch(s.Substring(lineStart, start - lineStart))) return false;
         }
         if (end < s.Length)
         {

@@ -112,6 +112,9 @@ public sealed class DocumentVm : ObservableBase, IDisposable
     public string Name { get; }
     public ObservableCollection<PageVm> Pages { get; } = new();
 
+    /// <summary>The languages this document was recognised with. The Excel export reads table cells again with the same languages, whatever the language boxes say by then.</summary>
+    public IReadOnlyList<OcrLanguage> Languages { get; set; } = Array.Empty<OcrLanguage>();
+
     public DocumentState State
     {
         get => _state;

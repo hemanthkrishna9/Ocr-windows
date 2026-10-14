@@ -485,6 +485,7 @@ public sealed partial class MainWindow : Window
     private async Task ProcessDocumentAsync(DocumentVm doc, List<OcrLanguage> langs)
     {
         doc.MarkProcessing();
+        doc.Languages = langs.ToList();
         if (!_engineUse.TryEnter())
         {
             doc.MarkFailed("Cancelled"); // the app is closing
@@ -806,7 +807,8 @@ public sealed partial class MainWindow : Window
                 if (!_engineUse.TryEnter()) { SetStatus("The app is closing."); return; }
                 engineEntered = true;
                 engine = await GetEngineAsync();
-                langs = SelectedLanguages();
+                // the languages the document was recognised with, not whatever is ticked now
+                langs = doc.Languages.Count > 0 ? doc.Languages.ToList() : SelectedLanguages();
                 if (langs.Count == 0) { SetStatus("Select at least one language first."); return; }
             }
 
@@ -824,7 +826,7 @@ public sealed partial class MainWindow : Window
                         DocxExporter.Write(redact ? RedactPagesText(pages.Select(p => p.Page).ToList(), plan!) : pages.Select(p => p.Page), path);
                         break;
                     case "xlsx":
-                        WriteXlsx(engine!, pages, plan, langs!, path, ct);
+                        WriteXlsx(engine!, pages, plan, redact, langs!, path, ct);
                         break;
                     default:
                         // null: Core looks in <exe dir>\fonts first, where the bundled Noto fonts are copied.
@@ -914,7 +916,7 @@ public sealed partial class MainWindow : Window
     }
 
     /// <summary>Runs on a worker thread. The caller holds an engine use for the whole call.</summary>
-    private static void WriteXlsx(OcrEngine engine, List<(string Path, OcrPage Page)> pages, List<List<PiiFinding>>? plan,
+    private static void WriteXlsx(OcrEngine engine, List<(string Path, OcrPage Page)> pages, List<List<PiiFinding>>? plan, bool redact,
         IReadOnlyList<OcrLanguage> langs, string path, CancellationToken ct)
     {
         var results = new List<(OcrPage Page, IReadOnlyList<OcrTable> Tables)>(pages.Count);
@@ -925,7 +927,11 @@ public sealed partial class MainWindow : Window
             var (image, page) = LoadMaybeRedacted(pages[i].Path, pages[i].Page, plan?[i], i + 1);
             try
             {
-                results.Add((page, TableExtractor.Extract(engine, image, page, langs)));
+                var tables = TableExtractor.Extract(engine, image, page, langs);
+                // Cells that cross a border, and the cells TableExtractor reads again from the bitmap, have no finding of their own: mask them by content.
+                // What the user unticked in the review stays readable here too: the findings of this page minus the ones in the plan.
+                if (redact) tables = Redactor.MaskTables(tables, null, 'X', pages[i].Page, Unticked(pages[i].Page, plan?[i]));
+                results.Add((page, tables));
             }
             finally
             {
@@ -933,6 +939,15 @@ public sealed partial class MainWindow : Window
             }
         }
         XlsxExporter.Write(results, path);
+    }
+
+    /// <summary>The findings on the page that the user did not tick (same detector, same page text as the review dialog).</summary>
+    private static List<PiiFinding> Unticked(OcrPage page, List<PiiFinding>? ticked)
+    {
+        var all = Redactor.Find(page);
+        if (ticked == null) return new List<PiiFinding>();
+        var set = new HashSet<(int, int, int)>(ticked.Select(f => (f.LineIndex, f.Start, f.Length)));
+        return all.Where(f => !set.Contains((f.LineIndex, f.Start, f.Length))).ToList();
     }
 
     private static string KindLabel(PiiKind kind) => kind switch
