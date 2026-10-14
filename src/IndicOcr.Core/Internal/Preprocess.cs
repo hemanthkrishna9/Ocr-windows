@@ -158,6 +158,16 @@ internal static class Preprocess
         r += px[i00 + 2] * w00 + px[i10 + 2] * w10 + px[i01 + 2] * w01 + px[i11 + 2] * w11;
     }
 
+    /// <summary>The leftmost <paramref name="maxWidth"/> columns of a crop (the crop itself when it is not wider).</summary>
+    public static LineCrop Head(LineCrop c, int maxWidth)
+    {
+        if (c.Width <= maxWidth) return c;
+        var res = new byte[maxWidth * RecHeight * 3];
+        for (int y = 0; y < RecHeight; y++)
+            Buffer.BlockCopy(c.Bgr, y * c.Width * 3, res, y * maxWidth * 3, maxWidth * 3);
+        return new LineCrop(res, maxWidth, (double)maxWidth / RecHeight);
+    }
+
     /// <summary>NCHW tensor [n,3,48,width], (x/255-0.5)/0.5, zero padded on the right.</summary>
     public static float[] RecBatchTensor(IReadOnlyList<LineCrop> crops, int width)
     {

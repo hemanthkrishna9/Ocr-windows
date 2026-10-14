@@ -45,6 +45,8 @@ The `models` job in `.github/workflows/build.yml` runs the same script on Ubuntu
 dotnet run --project src/IndicOcr.Cli -- ocr page.png --models models --lang te+en --format txt,docx,pdf
 ```
 
+`--lang auto` detects the script of each line itself (Telugu, Hindi, Tamil, Kannada among the installed models, plus English) and prints `Detected: Telugu, English` per page. In the API pass `OcrLanguage.Auto` in the languages list; `OcrPage.DetectedLanguages` has the result.
+
 `ocr` takes a file or a folder (`--recursive` for sub-folders). Outputs go next to each input, or under `--out-dir` (sub-folders of a folder input are kept):
 
 | Format | Output file |

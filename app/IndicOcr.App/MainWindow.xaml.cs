@@ -13,24 +13,27 @@ using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 using IOPath = System.IO.Path;
+using Polygon = Microsoft.UI.Xaml.Shapes.Polygon;
 using Rectangle = Microsoft.UI.Xaml.Shapes.Rectangle;
 
 namespace IndicOcr.App;
 
 public sealed partial class MainWindow : Window
 {
-    private static readonly (OcrLanguage Language, string Label)[] LanguageLabels =
+    // Order of the tick boxes. Labels come from LanguageNames; "(beta)" comes from OcrEngine.IsBeta.
+    private static readonly OcrLanguage[] PickerLanguages =
     {
-        (OcrLanguage.Telugu, "Telugu"),
-        (OcrLanguage.Hindi, "Hindi / Marathi"),
-        (OcrLanguage.Tamil, "Tamil"),
-        (OcrLanguage.Kannada, "Kannada (beta)"),
-        (OcrLanguage.English, "English"),
+        OcrLanguage.Telugu, OcrLanguage.Hindi, OcrLanguage.Tamil, OcrLanguage.Kannada, OcrLanguage.English,
     };
+
+    private static bool IsIndic(OcrLanguage l) => l != OcrLanguage.English && l != OcrLanguage.Auto;
 
     private readonly IntPtr _hwnd;
     private readonly ObservableCollection<DocumentVm> _docs = new();
     private readonly Dictionary<OcrLanguage, CheckBox> _langChecks = new();
+    private readonly HashSet<OcrLanguage> _availableLangs = new();
+    private CheckBox? _autoCheck;
+    private TextBlock? _langHint;
     private readonly Dictionary<LineVm, Rectangle> _boxes = new();
     // The engine is thread-safe, so documents and snips use it at the same time. This only tracks
     // active users so the engine is never disposed while something is still running on it.
@@ -62,6 +65,8 @@ public sealed partial class MainWindow : Window
         _hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
 
         QueueList.ItemsSource = _docs;
+        RedactToggle.IsChecked = _settings.RedactIds;
+        UpdateRedactUi();
         AppWindow.Closing += OnAppWindowClosing;
         Closed += OnClosed;
 
@@ -108,6 +113,9 @@ public sealed partial class MainWindow : Window
     {
         LanguagePanel.Children.Clear();
         _langChecks.Clear();
+        _availableLangs.Clear();
+        _autoCheck = null;
+        _langHint = null;
 
         IReadOnlyList<OcrLanguage> available = Array.Empty<OcrLanguage>();
         if (_modelsDir != null)
@@ -115,11 +123,33 @@ public sealed partial class MainWindow : Window
             try { available = OcrEngine.AvailableLanguages(_modelsDir); }
             catch (Exception ex) { AppLog.Error("AvailableLanguages", ex); }
         }
+        foreach (var l in available) _availableLangs.Add(l);
 
         _updatingLanguageUi = true;
-        foreach (var (lang, label) in LanguageLabels)
+
+        // Auto-detect needs at least one Indic model to choose between.
+        bool autoPossible = available.Any(IsIndic);
+        _autoCheck = new CheckBox
+        {
+            Content = "Auto-detect language",
+            IsEnabled = autoPossible,
+            IsChecked = autoPossible && _settings.AutoDetect == true,
+            MinWidth = 0,
+        };
+        ToolTipService.SetToolTip(_autoCheck, autoPossible
+            ? "Finds the script of each line by itself, so mixed pages need no setup. English is always found."
+            : "Needs at least one Telugu, Hindi, Tamil or Kannada model");
+        _autoCheck.Checked += Auto_Changed;
+        _autoCheck.Unchecked += Auto_Changed;
+        LanguagePanel.Children.Add(_autoCheck);
+
+        _langHint = new TextBlock { VerticalAlignment = VerticalAlignment.Center, FontSize = 12, Opacity = 0.8, Margin = new Thickness(12, 0, 4, 0) };
+        LanguagePanel.Children.Add(_langHint);
+
+        foreach (var lang in PickerLanguages)
         {
             bool enabled = available.Contains(lang);
+            string label = LanguageNames.Display(lang) + (OcrEngine.IsBeta(lang) ? " (beta)" : "");
             var cb = new CheckBox
             {
                 Content = label,
@@ -128,25 +158,80 @@ public sealed partial class MainWindow : Window
                 MinWidth = 0,
                 Tag = lang,
             };
-            if (!enabled) ToolTipService.SetToolTip(cb, "No model installed for this language");
-            else if (lang == OcrLanguage.Kannada) ToolTipService.SetToolTip(cb, "Uses an older model; expect many errors");
             cb.Checked += Language_Changed;
             cb.Unchecked += Language_Changed;
             _langChecks[lang] = cb;
             LanguagePanel.Children.Add(cb);
         }
         _updatingLanguageUi = false;
+        ApplyAutoUi();
     }
 
+    private bool AutoOn => _autoCheck is { IsEnabled: true, IsChecked: true };
+
+    /// <summary>
+    /// With Auto on, the Indic boxes stay usable as an optional restriction ("only these scripts"; none ticked means all installed
+    /// ones). That is Core's meaning of Auto plus a list, and it helps when the user knows a page is never, say, Kannada. English has
+    /// no meaning there (Latin text is always labelled English), so its box is greyed out.
+    /// </summary>
+    private void ApplyAutoUi()
+    {
+        bool auto = AutoOn;
+        if (_langHint != null)
+            _langHint.Text = auto ? "Only these scripts (optional):" : "Languages:";
+        foreach (var (lang, cb) in _langChecks)
+        {
+            bool avail = _availableLangs.Contains(lang);
+            cb.IsEnabled = avail && !(auto && lang == OcrLanguage.English);
+            if (!avail) ToolTipService.SetToolTip(cb, "No model installed for this language");
+            else if (auto && lang == OcrLanguage.English) ToolTipService.SetToolTip(cb, "Auto-detect always finds English as well");
+            else if (OcrEngine.IsBeta(lang)) ToolTipService.SetToolTip(cb, "Uses an older model; expect many errors");
+            else ToolTipService.SetToolTip(cb, auto ? "Tick to limit auto-detect to the ticked scripts" : null);
+        }
+    }
+
+    /// <summary>What the engine is given: Auto plus the ticked Indic scripts, or just the ticked languages.</summary>
     private List<OcrLanguage> SelectedLanguages()
-        => _langChecks.Where(kv => kv.Value.IsEnabled && kv.Value.IsChecked == true)
-                      .Select(kv => kv.Key).ToList();
+    {
+        var ticked = _langChecks.Where(kv => _availableLangs.Contains(kv.Key) && kv.Value.IsChecked == true)
+                                .Select(kv => kv.Key).ToList();
+        if (!AutoOn) return ticked;
+        var result = new List<OcrLanguage> { OcrLanguage.Auto };
+        result.AddRange(ticked.Where(IsIndic));
+        return result;
+    }
+
+    private void SaveLanguageSettings()
+    {
+        // English stays remembered even while its box is greyed out by Auto.
+        _settings.Languages = _langChecks.Where(kv => _availableLangs.Contains(kv.Key) && kv.Value.IsChecked == true)
+                                         .Select(kv => kv.Key.ToString()).ToList();
+        _settings.AutoDetect = AutoOn;
+        SettingsService.Save(_settings);
+    }
+
+    private void Auto_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_updatingLanguageUi) return;
+        if (!AutoOn && !_langChecks.Any(kv => kv.Value.IsChecked == true))
+        {
+            // Switching Auto off with nothing ticked would leave nothing to read: fall back to a sensible pair.
+            _updatingLanguageUi = true;
+            OcrLanguage? first = PickerLanguages.Where(l => IsIndic(l) && _availableLangs.Contains(l))
+                                                .Select(l => (OcrLanguage?)l).FirstOrDefault();
+            if (first != null) _langChecks[first.Value].IsChecked = true;
+            if (_availableLangs.Contains(OcrLanguage.English)) _langChecks[OcrLanguage.English].IsChecked = true;
+            _updatingLanguageUi = false;
+        }
+        ApplyAutoUi();
+        SaveLanguageSettings();
+        _ = StartQueueAsync();
+    }
 
     private void Language_Changed(object sender, RoutedEventArgs e)
     {
         if (_updatingLanguageUi) return;
-        _settings.Languages = SelectedLanguages().Select(l => l.ToString()).ToList();
-        SettingsService.Save(_settings);
+        SaveLanguageSettings();
         _ = StartQueueAsync(); // queued documents may have been waiting for a language
     }
 
@@ -503,6 +588,8 @@ public sealed partial class MainWindow : Window
             _boxes.Clear();
             LinesList.ItemsSource = null;
             PageImage.Source = null;
+            RedactCanvas.Children.Clear();
+            DetectedLabel.Text = string.Empty;
 
             var doc = _currentDoc;
             if (doc == null || index < 0 || index >= doc.Pages.Count)
@@ -517,6 +604,7 @@ public sealed partial class MainWindow : Window
             _currentPage = page;
             _pageIndex = index;
             UpdatePageNav();
+            DetectedLabel.Text = page.DetectedText;
 
             // The page is already a JPEG in the cache folder: read it as is, no re-encode. Decode at
             // most 2000 px wide; the Image element scales it to the page size.
@@ -530,6 +618,8 @@ public sealed partial class MainWindow : Window
             PageGrid.Height = h;
             BoxCanvas.Width = w;
             BoxCanvas.Height = h;
+            RedactCanvas.Width = w;
+            RedactCanvas.Height = h;
             PageImage.Width = w;
             PageImage.Height = h;
             PageImage.Source = bitmap;
@@ -618,61 +708,144 @@ public sealed partial class MainWindow : Window
         return doc;
     }
 
-    private void CopyAll_Click(object sender, RoutedEventArgs e)
+    private bool RedactionOn => RedactToggle.IsChecked;
+
+    private void RedactToggle_Click(object sender, RoutedEventArgs e)
     {
-        var doc = ExportableDocument();
-        if (doc == null) return;
-        string text = doc.FullText();
-        if (CopyToClipboard(text)) SetStatus("Copied " + text.Length + " characters");
-        else SetStatus("Could not access the clipboard.");
+        _settings.RedactIds = RedactToggle.IsChecked;
+        SettingsService.Save(_settings);
+        UpdateRedactUi();
+        SetStatus(RedactionOn
+            ? "Redaction is on: Copy all text and every export ask you to review the ID numbers first."
+            : "Redaction is off.");
+    }
+
+    private void UpdateRedactUi()
+        => CopyButton.Content = RedactionOn ? "Copy all text (redacted)" : "Copy all text";
+
+    private async void CopyAll_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var doc = ExportableDocument();
+            if (doc == null) return;
+            string text;
+            if (RedactionOn)
+            {
+                var pages = doc.Pages.Select(p => p.ToEditedPage()).ToList();
+                var plan = await ReviewRedactionAsync(doc, pages);
+                if (plan == null) { SetStatus("Copy cancelled."); return; }
+                text = string.Join(Environment.NewLine + Environment.NewLine,
+                    RedactPagesText(pages, plan).Select(p => string.Join(Environment.NewLine, p.Lines.Select(l => l.Text))));
+            }
+            else
+            {
+                text = doc.FullText();
+            }
+            if (CopyToClipboard(text)) SetStatus("Copied " + text.Length + " characters" + (RedactionOn ? " (redacted)" : ""));
+            else SetStatus("Could not access the clipboard.");
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Copy all", ex);
+            SetStatus("Could not copy the text.");
+        }
     }
 
     private void SaveTxt_Click(object sender, RoutedEventArgs e) => _ = ExportAsync("txt");
     private void SaveDocx_Click(object sender, RoutedEventArgs e) => _ = ExportAsync("docx");
     private void SavePdf_Click(object sender, RoutedEventArgs e) => _ = ExportAsync("pdf");
+    private void SaveXlsx_Click(object sender, RoutedEventArgs e) => _ = ExportAsync("xlsx");
 
     private async Task ExportAsync(string kind)
     {
         var doc = ExportableDocument();
         if (doc == null) return;
-        _exportRunning++; // blocks Clear queue until the export (and the file picker) is finished
+        _exportRunning++; // blocks Clear queue until the export (dialog, file picker and write) is finished
         UpdateButtons();
+        bool engineEntered = false;
+        string? outPath = null;
+        bool redactRun = false;
         try
         {
+            // Snapshot the edited lines on the UI thread; everything after this works on the snapshot.
+            var pages = doc.Pages.Select(p => (Path: p.ImagePath, Page: p.ToEditedPage())).ToList();
+
+            // Redaction: review first. Cancelling stops the export; nothing is written.
+            List<List<PiiFinding>>? plan = null;
+            if (RedactionOn)
+            {
+                plan = await ReviewRedactionAsync(doc, pages.Select(p => p.Page).ToList());
+                if (plan == null) { SetStatus("Export cancelled."); return; }
+            }
+            bool redact = plan != null;
+            redactRun = redact;
+
             var picker = new FileSavePicker();
             WinRT.Interop.InitializeWithWindow.Initialize(picker, _hwnd);
             picker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
-            picker.SuggestedFileName = IOPath.GetFileNameWithoutExtension(doc.Name);
-            string label = kind == "txt" ? "Text file" : kind == "docx" ? "Word document" : "Searchable PDF";
+            picker.SuggestedFileName = IOPath.GetFileNameWithoutExtension(doc.Name) + (redact ? ".redacted" : "");
+            string label = kind switch
+            {
+                "txt" => "Text file",
+                "docx" => "Word document",
+                "xlsx" => "Excel workbook",
+                _ => "Searchable PDF",
+            };
             picker.FileTypeChoices.Add(label, new List<string> { "." + kind });
             StorageFile? file = await picker.PickSaveFileAsync();
             if (file == null) return;
-
-            // Snapshot the edited lines on the UI thread, then write on a worker thread.
-            var pages = doc.Pages.Select(p => (Path: p.ImagePath, Page: p.ToEditedPage())).ToList();
             string path = file.Path;
+            outPath = path;
+
+            OcrEngine? engine = null;
+            List<OcrLanguage>? langs = null;
+            if (kind == "xlsx")
+            {
+                // Table cells are read again by the engine: same rule as every other engine user.
+                if (!_engineUse.TryEnter()) { SetStatus("The app is closing."); return; }
+                engineEntered = true;
+                engine = await GetEngineAsync();
+                langs = SelectedLanguages();
+                if (langs.Count == 0) { SetStatus("Select at least one language first."); return; }
+            }
 
             SetStatus("Saving...");
             BusyBar.Visibility = Visibility.Visible;
+            var ct = _cts.Token;
             await Task.Run(() =>
             {
                 switch (kind)
                 {
-                    case "txt": TextExporter.Write(pages.Select(p => p.Page), path); break;
-                    case "docx": DocxExporter.Write(pages.Select(p => p.Page), path); break;
-                    // null: Core looks in <exe dir>\fonts first, where the bundled Noto fonts are copied.
-                    default: SearchablePdfExporter.Write(ReadCachedJpegs(pages), path, null); break;
+                    case "txt":
+                        TextExporter.Write(redact ? RedactPagesText(pages.Select(p => p.Page).ToList(), plan!) : pages.Select(p => p.Page), path);
+                        break;
+                    case "docx":
+                        DocxExporter.Write(redact ? RedactPagesText(pages.Select(p => p.Page).ToList(), plan!) : pages.Select(p => p.Page), path);
+                        break;
+                    case "xlsx":
+                        WriteXlsx(engine!, pages, plan, langs!, path, ct);
+                        break;
+                    default:
+                        // null: Core looks in <exe dir>\fonts first, where the bundled Noto fonts are copied.
+                        // Redacted: only the blacked-out bitmaps go to the exporter, never the stored JPEG.
+                        if (redact) SearchablePdfExporter.Write(RedactedBitmaps(pages, plan!), path, null);
+                        else SearchablePdfExporter.Write(ReadCachedJpegs(pages), path, null);
+                        break;
                 }
             });
-            SetStatus("Saved " + file.Name);
+            SetStatus("Saved " + file.Name + (redact ? " (redacted)" : ""));
         }
         catch (Exception ex)
         {
             AppLog.Error("Export " + kind, ex);
+            // A failed redacted export must not leave a partly written file behind.
+            if (redactRun && outPath != null) { try { File.Delete(outPath); } catch { /* best effort */ } }
             SetStatus("Could not save the file: " + DescribeError(ex));
         }
         finally
         {
+            if (engineEntered) _engineUse.Exit();
             _exportRunning--;
             BusyBar.Visibility = _queueRunning ? Visibility.Visible : Visibility.Collapsed;
             UpdateButtons();
@@ -687,6 +860,222 @@ public sealed partial class MainWindow : Window
     {
         foreach (var (path, page) in pages)
             yield return (File.ReadAllBytes(path), page);
+    }
+
+    // ---------------------------------------------------------------- redaction and tables
+
+    /// <summary>
+    /// Decodes the cached page and, when there are findings, returns a blacked-out copy with the matching masked page. The caller owns
+    /// (and disposes) the returned bitmap. The unredacted bitmap is disposed here.
+    /// </summary>
+    private static (SKBitmap Image, OcrPage Page) LoadMaybeRedacted(string path, OcrPage page, IReadOnlyList<PiiFinding>? findings, int pageNumber)
+    {
+        var src = SKBitmap.Decode(path) ?? throw new IOException("Could not read the stored page image.");
+        if (findings == null || findings.Count == 0) return (src, page);
+        try
+        {
+            return Redactor.Apply(src, page, findings);
+        }
+        catch (ArgumentException)
+        {
+            // Size mismatch or a finding that does not fit the page: never fall back to the unredacted image. Abort the export.
+            throw new InvalidOperationException("Page " + pageNumber + " could not be redacted safely (its image does not match its text). Nothing was saved.");
+        }
+        finally
+        {
+            src.Dispose();
+        }
+    }
+
+    /// <summary>One redacted page at a time, each bitmap disposed as soon as the exporter asks for the next one.</summary>
+    private static IEnumerable<(SKBitmap Image, OcrPage Page)> RedactedBitmaps(List<(string Path, OcrPage Page)> pages, List<List<PiiFinding>> plan)
+    {
+        for (int i = 0; i < pages.Count; i++)
+        {
+            var (image, page) = LoadMaybeRedacted(pages[i].Path, pages[i].Page, plan[i], i + 1);
+            try
+            {
+                yield return (image, page);
+            }
+            finally
+            {
+                image.Dispose();
+            }
+        }
+    }
+
+    /// <summary>Text only: masks the selected findings in the page text (no image involved).</summary>
+    private static List<OcrPage> RedactPagesText(List<OcrPage> pages, List<List<PiiFinding>> plan)
+    {
+        var result = new List<OcrPage>(pages.Count);
+        for (int i = 0; i < pages.Count; i++)
+            result.Add(plan[i].Count == 0 ? pages[i] : Redactor.MaskText(pages[i], plan[i], 'X'));
+        return result;
+    }
+
+    /// <summary>Runs on a worker thread. The caller holds an engine use for the whole call.</summary>
+    private static void WriteXlsx(OcrEngine engine, List<(string Path, OcrPage Page)> pages, List<List<PiiFinding>>? plan,
+        IReadOnlyList<OcrLanguage> langs, string path, CancellationToken ct)
+    {
+        var results = new List<(OcrPage Page, IReadOnlyList<OcrTable> Tables)>(pages.Count);
+        for (int i = 0; i < pages.Count; i++)
+        {
+            ct.ThrowIfCancellationRequested();
+            // With redaction the tables come from the blacked-out bitmap and the masked page, so a hidden number cannot be read back.
+            var (image, page) = LoadMaybeRedacted(pages[i].Path, pages[i].Page, plan?[i], i + 1);
+            try
+            {
+                results.Add((page, TableExtractor.Extract(engine, image, page, langs)));
+            }
+            finally
+            {
+                image.Dispose();
+            }
+        }
+        XlsxExporter.Write(results, path);
+    }
+
+    private static string KindLabel(PiiKind kind) => kind switch
+    {
+        PiiKind.Aadhaar => "Aadhaar",
+        PiiKind.Vid => "Aadhaar VID",
+        PiiKind.Pan => "PAN",
+        PiiKind.Phone => "Phone",
+        PiiKind.Email => "Email",
+        _ => kind.ToString(),
+    };
+
+    private const string RedactionWarning = "Numbers written in Indian-language digits may not be detected. Check the pages before sharing.";
+
+    private bool _dialogOpen;
+    private ContentDialog? _activeDialog;
+
+    /// <summary>
+    /// Finds ID numbers on the (edited) pages and lets the user tick what to black out. Returns, per page, the findings to apply, or null
+    /// when the user cancels. Findings are shown only in this dialog (masked) and are never logged.
+    /// </summary>
+    private async Task<List<List<PiiFinding>>?> ReviewRedactionAsync(DocumentVm doc, List<OcrPage> pages)
+    {
+        if (_dialogOpen) { SetStatus("Finish the open dialog first."); return null; }
+        SetStatus("Looking for ID numbers...");
+        BusyBar.Visibility = Visibility.Visible;
+        List<IReadOnlyList<PiiFinding>> found;
+        try
+        {
+            found = await Task.Run(() => pages.Select(p => Redactor.Find(p)).ToList());
+        }
+        finally
+        {
+            BusyBar.Visibility = _queueRunning ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        // One row per (page, GroupId): a number split over several OCR lines is one row; its checkbox covers all its findings.
+        var items = new List<(int Page, List<PiiFinding> Findings, CheckBox Box)>();
+        var list = new StackPanel { Spacing = 2 };
+        for (int pi = 0; pi < found.Count; pi++)
+        {
+            foreach (var g in found[pi].GroupBy(f => f.GroupId))
+            {
+                var members = g.ToList();
+                var f = members[0];
+                var cb = new CheckBox
+                {
+                    IsChecked = true,
+                    MinWidth = 0,
+                    Content = "Page " + (pi + 1) + "   " + KindLabel(f.Kind) + "   " + f.MaskedText + (members.All(m => m.Verified) ? "" : "   (unverified)"),
+                };
+                items.Add((pi, members, cb));
+                list.Children.Add(cb);
+            }
+        }
+
+        void RefreshPreview()
+        {
+            RedactCanvas.Children.Clear();
+            if (!ReferenceEquals(doc, _currentDoc)) return;
+            double stroke = Math.Max(2, (_currentPage?.Width ?? 800) / 400.0);
+            foreach (var (pageIndex, findings, box) in items)
+            {
+                if (pageIndex != _pageIndex || box.IsChecked != true) continue;
+                foreach (var finding in findings)
+                {
+                    var pts = new PointCollection();
+                    foreach (var q in finding.Quad) pts.Add(new Windows.Foundation.Point(q.X, q.Y));
+                    RedactCanvas.Children.Add(new Polygon
+                    {
+                        Points = pts,
+                        Fill = new SolidColorBrush(Windows.UI.Color.FromArgb(0xA0, 0, 0, 0)),
+                        Stroke = new SolidColorBrush(Colors.Red),
+                        StrokeThickness = stroke,
+                    });
+                }
+            }
+        }
+        foreach (var it in items)
+        {
+            it.Box.Checked += (_, _) => RefreshPreview();
+            it.Box.Unchecked += (_, _) => RefreshPreview();
+        }
+
+        var content = new StackPanel { Spacing = 8, MinWidth = 360 };
+        ContentDialog dialog;
+        if (items.Count == 0)
+        {
+            content.Children.Add(new TextBlock
+            {
+                TextWrapping = TextWrapping.Wrap,
+                Text = "No Aadhaar, PAN or phone numbers were found on these pages. " + RedactionWarning,
+            });
+            dialog = new ContentDialog
+            {
+                Title = "No ID numbers found",
+                Content = content,
+                PrimaryButtonText = "Continue",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+            };
+        }
+        else
+        {
+            content.Children.Add(new TextBlock
+            {
+                TextWrapping = TextWrapping.Wrap,
+                Text = items.Count + " possible ID number(s) found. Ticked ones are blacked out in the file and replaced by X in the text. Unticked ones stay readable. The page view shows the ticked areas. Unverified means the number could not be confirmed by its check digit; it is still ticked.",
+            });
+            content.Children.Add(new ScrollViewer { MaxHeight = 320, Content = list });
+            content.Children.Add(new TextBlock { TextWrapping = TextWrapping.Wrap, Text = RedactionWarning });
+            dialog = new ContentDialog
+            {
+                Title = "Review ID numbers to redact",
+                Content = content,
+                PrimaryButtonText = "Redact and continue",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Primary,
+            };
+        }
+        dialog.XamlRoot = RootGrid.XamlRoot; // required, or ShowAsync throws
+        dialog.RequestedTheme = RootGrid.ActualTheme;
+
+        ContentDialogResult result;
+        _dialogOpen = true;
+        _activeDialog = dialog;
+        RefreshPreview();
+        try
+        {
+            result = await dialog.ShowAsync();
+        }
+        finally
+        {
+            _dialogOpen = false;
+            _activeDialog = null;
+            RedactCanvas.Children.Clear();
+        }
+        if (result != ContentDialogResult.Primary) return null;
+
+        var plan = new List<List<PiiFinding>>(pages.Count);
+        for (int pi = 0; pi < pages.Count; pi++)
+            plan.Add(items.Where(it => it.Page == pi && it.Box.IsChecked == true).SelectMany(it => it.Findings).ToList());
+        return plan;
     }
 
     private bool CopyToClipboard(string text)
@@ -761,10 +1150,18 @@ public sealed partial class MainWindow : Window
 
             if (!_engineUse.TryEnter()) return; // the app is closing
             string text;
+            bool snipRedacted = false;
             try
             {
                 var engine = await GetEngineAsync();
-                text = await Task.Run(() => engine.Recognize(cropForOcr, langs).Text);
+                bool redact = RedactionOn; // a snip has no review step (it must stay one keystroke): every ID number found is masked
+                text = await Task.Run(() =>
+                {
+                    var snipPage = engine.Recognize(cropForOcr, langs);
+                    if (redact) snipPage = RedactPagesText(new List<OcrPage> { snipPage }, new List<List<PiiFinding>> { Redactor.Find(snipPage).ToList() })[0];
+                    return snipPage.Text;
+                });
+                snipRedacted = redact;
             }
             finally
             {
@@ -778,7 +1175,7 @@ public sealed partial class MainWindow : Window
             }
             else if (CopyToClipboard(text))
             {
-                string msg = "Copied " + text.Length + " characters";
+                string msg = "Copied " + text.Length + " characters" + (snipRedacted ? " (redacted)" : "");
                 SetStatus(msg);
                 ShowToast(msg);
             }
@@ -856,6 +1253,7 @@ public sealed partial class MainWindow : Window
     private async Task ShutdownAsync()
     {
         _cts.Cancel();
+        try { _activeDialog?.Hide(); } catch { /* dialog already closing */ }
         _hotkey.Dispose();
 
         // No new engine users from here on; wait for the running ones (queue, snip) to leave.

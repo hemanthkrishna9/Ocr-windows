@@ -17,7 +17,7 @@ namespace IndicOcr.Core;
 /// recognition is in flight: it releases the native sessions, and a call still running on another thread would fail or crash.
 /// </para>
 /// </summary>
-public sealed class OcrEngine : IDisposable
+public sealed partial class OcrEngine : IDisposable
 {
     const string DetFile = "det.onnx";
 
@@ -54,7 +54,7 @@ public sealed class OcrEngine : IDisposable
     {
         if (!Directory.Exists(modelsDirectory) || !File.Exists(Path.Combine(modelsDirectory, DetFile)))
             return Array.Empty<OcrLanguage>();
-        return Enum.GetValues<OcrLanguage>().Where(l =>
+        return Enum.GetValues<OcrLanguage>().Where(l => l != OcrLanguage.Auto).Where(l =>
         {
             var p = ModelPrefix(l);
             return File.Exists(Path.Combine(modelsDirectory, $"rec_{p}.onnx"))
@@ -98,6 +98,7 @@ public sealed class OcrEngine : IDisposable
     static IReadOnlyList<OcrLanguage> CheckLangs(IReadOnlyList<OcrLanguage> languages)
     {
         if (languages == null || languages.Count == 0) throw new ArgumentException("At least one language is required.", nameof(languages));
+        if (languages.Any(l => !Enum.IsDefined(l))) throw new ArgumentException("Unknown language value.", nameof(languages));
         return languages.Distinct().ToList();
     }
 
@@ -117,11 +118,16 @@ public sealed class OcrEngine : IDisposable
     /// Like <see cref="Recognize"/>, but also returns the bitmap the boxes refer to: the upright copy when the page was turned
     /// (the caller disposes it), or null when no rotation was applied (the boxes then refer to <paramref name="image"/>).
     /// </summary>
-    public (OcrPage Page, SKBitmap? Rotated) RecognizeOriented(SKBitmap image, IReadOnlyList<OcrLanguage> languages, int pageIndex = 0)
+    public (OcrPage Page, SKBitmap? Rotated) RecognizeOriented(SKBitmap image, IReadOnlyList<OcrLanguage> languages, int pageIndex = 0) =>
+        RecognizeOriented(image, languages, pageIndex, null);
+
+    internal (OcrPage Page, SKBitmap? Rotated) RecognizeOriented(SKBitmap image, IReadOnlyList<OcrLanguage> languages, int pageIndex, AutoContext? auto)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(image);
         var langs = CheckLangs(languages);
+        // Auto: orientation tests read a few lines with every candidate recognizer (rare, small); the page itself is read with script routing.
+        var orientLangs = IsAuto(langs) ? AutoCandidates(langs) : langs;
         var sw = Stopwatch.StartNew();
 
         SKBitmap current = image;      // the bitmap that px and quads refer to
@@ -147,23 +153,23 @@ public sealed class OcrEngine : IDisposable
             bool tallAsIs = false;
             if (_opt.AutoRotate && quads.Count >= 4 && PageOrientation.TallFraction(quads) > 0.6)
             {
-                var (k, asIs) = ChooseQuarterTurn(px, quads, langs);
+                var (k, asIs) = ChooseQuarterTurn(px, quads, orientLangs);
                 tallAsIs = asIs;
                 if (k != 0) Turn(k);
             }
 
             // 2) Recognise. Only when the lines read badly, test the upside-down hypothesis on a small sample.
-            var results = RecognizeQuads(px, quads, langs, !tallAsIs);
-            if (_opt.AutoRotate && ShouldTryUpsideDown(results) && UpsideDownReadsBetter(px, quads, results, langs, !tallAsIs))
+            var results = RecognizeQuads(px, quads, langs, !tallAsIs, auto);
+            if (_opt.AutoRotate && ShouldTryUpsideDown(results) && UpsideDownReadsBetter(px, quads, results, orientLangs, !tallAsIs))
             {
                 Turn(2);
-                results = RecognizeQuads(px, quads, langs, !tallAsIs);
+                results = RecognizeQuads(px, quads, langs, !tallAsIs, auto);
             }
 
             var lines = BuildLines(results, quads, langs, keepEmpty: false);
             var ordered = LineOrdering.Order(lines, l => l.Box);
             sw.Stop();
-            var page = new OcrPage(pageIndex, current.Width, current.Height, ordered, sw.Elapsed) { RotationApplied = turns * 90 };
+            var page = new OcrPage(pageIndex, current.Width, current.Height, ordered, sw.Elapsed) { RotationApplied = turns * 90, DetectedLanguages = Detected(ordered) };
             var rotatedBitmap = owned;
             owned = null; // ownership moves to the caller
             return (page, rotatedBitmap);
@@ -279,8 +285,9 @@ public sealed class OcrEngine : IDisposable
         return langs;
     }
 
-    List<Rec> RecognizeQuads(PixelImage px, List<Pt[]> quads, IReadOnlyList<OcrLanguage> langs, bool rotateTall = true)
+    List<Rec> RecognizeQuads(PixelImage px, List<Pt[]> quads, IReadOnlyList<OcrLanguage> langs, bool rotateTall = true, AutoContext? auto = null)
     {
+        if (IsAuto(langs)) return RecognizeQuadsAuto(px, quads, langs, rotateTall, auto);
         var best = new Rec[quads.Count];
         if (quads.Count == 0) return best.ToList();
         var crops = new List<Preprocess.LineCrop>(quads.Count);
@@ -317,6 +324,8 @@ public sealed class OcrEngine : IDisposable
     /// and reads about as well (at least 85% of the winner's Mass), the Indic reading wins, because a recognizer for another script
     /// drops or garbles what it cannot read and still scores well on the Latin part of the line.
     /// </summary>
+    internal static Rec ChooseReading(List<Rec> candidates) => Choose(candidates);
+
     static Rec Choose(List<Rec> candidates)
     {
         var best = candidates[0];
@@ -390,6 +399,7 @@ public sealed class OcrEngine : IDisposable
         if (!File.Exists(path)) throw new FileNotFoundException("Input file not found", path);
         if (!InputFiles.IsSupported(path)) throw new NotSupportedException($"Unsupported file type: {Path.GetExtension(path)}");
         var langs = CheckLangs(languages);
+        var auto = IsAuto(langs) ? new AutoContext() : null; // the script hint lives for this file only
         using var pages = DocumentReader.ReadPages(path).GetEnumerator();
         int index = 0;
         while (true)
@@ -402,7 +412,7 @@ public sealed class OcrEngine : IDisposable
                 var bmp = pages.Current.Bitmap;
                 try
                 {
-                    var (page, rotated) = RecognizeOriented(bmp, langs, pageIndex);
+                    var (page, rotated) = RecognizeOriented(bmp, langs, pageIndex, auto);
                     page = page with { SourceDpi = pages.Current.Dpi };
                     if (rotated == null) return (bmp, page);
                     bmp.Dispose();

@@ -10,7 +10,7 @@ static class Program
         indicocr - offline Indic OCR
 
         Usage:
-          indicocr ocr <file-or-folder> --models DIR --lang te+en [--out-dir DIR] [--format txt,docx,pdf] [--recursive]
+          indicocr ocr <file-or-folder> --models DIR --lang te+en|auto [--out-dir DIR] [--format txt,docx,pdf] [--recursive]
                        [--fonts DIR] [--max-side N] [--threads N]
           indicocr langs --models DIR
 
@@ -23,6 +23,10 @@ static class Program
 
         Languages: en, te (Telugu), hi (Hindi/Marathi, Devanagari; "mr" is an alias), ta (Tamil), kn (Kannada, beta: older model, expect many errors); join with +.
         te/hi/ta + en runs only the Indic recognizer (its dictionary includes A-Z, a-z, 0-9).
+        --lang auto picks the script of each line itself (te, hi, ta, kn among the installed models; English is always read) and prints
+        "Detected: Telugu, English" per page. Measured on dense A4 pages: a Telugu, Hindi or Tamil page takes about 1.1 to 1.5 times as
+        long as naming the language, a Kannada page about 1.5 to 1.7 times (the Kannada model is checked against Telugu on the lines it does not
+        read cleanly). "auto+te+hi" limits the choice to those.
         The models folder defaults to the INDICOCR_MODELS environment variable.
         """;
 
@@ -88,7 +92,7 @@ static class Program
     static string Code(OcrLanguage l) => l switch
     {
         OcrLanguage.English => "en", OcrLanguage.Telugu => "te", OcrLanguage.Hindi => "hi",
-        OcrLanguage.Tamil => "ta", OcrLanguage.Kannada => "kn", _ => l.ToString(),
+        OcrLanguage.Tamil => "ta", OcrLanguage.Kannada => "kn", OcrLanguage.Auto => "auto", _ => l.ToString(),
     };
 
     internal static List<OcrLanguage> ParseLanguages(string spec)
@@ -98,12 +102,13 @@ static class Program
         {
             res.Add(part switch
             {
+                "auto" or "automatic" => OcrLanguage.Auto,
                 "en" or "eng" or "english" => OcrLanguage.English,
                 "te" or "tel" or "telugu" => OcrLanguage.Telugu,
                 "hi" or "hin" or "mr" or "mar" or "hindi" or "marathi" or "devanagari" => OcrLanguage.Hindi,
                 "ta" or "tam" or "tamil" => OcrLanguage.Tamil,
                 "kn" or "ka" or "kan" or "kannada" => OcrLanguage.Kannada,
-                _ => throw new ArgumentException($"Unknown language '{part}'. Use en, te, hi, ta, kn."),
+                _ => throw new ArgumentException($"Unknown language '{part}'. Use auto, en, te, hi, ta, kn."),
             });
         }
         if (res.Count == 0) throw new ArgumentException("--lang is required, e.g. --lang te+en.");
@@ -151,7 +156,9 @@ static class Program
         if (files.Count == 0) { Console.Error.WriteLine("No supported files found (png, jpg, tif, bmp, pdf)."); return 1; }
 
         var available = OcrEngine.AvailableLanguages(models);
-        var missing = langs.Where(l => !available.Contains(l)).ToList();
+        var missing = langs.Where(l => l != OcrLanguage.Auto && !available.Contains(l)).ToList();
+        if (langs.Contains(OcrLanguage.Auto) && !available.Any(l => l != OcrLanguage.English))
+            throw new ArgumentException("--lang auto needs at least one Indic model (te, hi, ta, kn) in " + models);
         if (missing.Count > 0) throw new ArgumentException("Models not found for: " + string.Join(", ", missing.Select(Code)));
 
         // Plan every output path up front and refuse anything that would overwrite an input or another output.
@@ -217,6 +224,10 @@ static class Program
         return failed > 0 ? 1 : 0;
     }
 
+    /// <summary>", Detected: Telugu, English" (language names only, never text); empty when the page has no text.</summary>
+    static string Detected(OcrPage page) =>
+        page.DetectedLanguages.Count == 0 ? "" : ", Detected: " + string.Join(", ", page.DetectedLanguages);
+
     /// <summary>Synchronous lazy view of the async OCR stream; disposes each page image once the consumer moves on.</summary>
     static IEnumerable<(SKBitmap Image, OcrPage Page)> Stream(OcrEngine engine, string file, IReadOnlyList<OcrLanguage> langs, List<OcrPage> sink)
     {
@@ -227,7 +238,7 @@ static class Program
             {
                 var (img, page) = e.Current;
                 sink.Add(page);
-                Console.WriteLine($"{Path.GetFileName(file)} page {page.PageIndex + 1}: {page.Elapsed.TotalSeconds:F2}s, {page.Lines.Count} lines");
+                Console.WriteLine($"{Path.GetFileName(file)} page {page.PageIndex + 1}: {page.Elapsed.TotalSeconds:F2}s, {page.Lines.Count} lines" + Detected(page));
                 try { yield return (img, page); }
                 finally { img.Dispose(); }
             }

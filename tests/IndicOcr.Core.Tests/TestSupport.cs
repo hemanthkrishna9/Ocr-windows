@@ -163,3 +163,10 @@ public static class TestEnv
         return l.ToArray();
     }
 }
+
+/// <summary>
+/// Tests that assert on wall-clock time live in this collection. xUnit runs test classes in parallel; a collection with
+/// DisableParallelization runs after the parallel ones have finished and alone, so CPU contention cannot fail a timing assertion.
+/// </summary>
+[CollectionDefinition("Timing", DisableParallelization = true)]
+public sealed class TimingCollection { }

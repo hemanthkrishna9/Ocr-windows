@@ -72,10 +72,26 @@ public sealed class PageVm : IDisposable
 
     public string Text => string.Join(Environment.NewLine, Lines.Select(l => l.Text));
 
+    /// <summary>"Detected: Telugu, English", or empty when the page was read with explicit languages (nothing detected).</summary>
+    public string DetectedText
+        => Page.DetectedLanguages.Count == 0
+            ? string.Empty
+            : "Detected: " + string.Join(", ", Page.DetectedLanguages.Select(LanguageNames.Display));
+
     public void Dispose()
     {
         PageCache.Delete(ImagePath);
     }
+}
+
+public static class LanguageNames
+{
+    public static string Display(OcrLanguage language) => language switch
+    {
+        OcrLanguage.Hindi => "Hindi / Marathi",
+        OcrLanguage.Auto => "Auto-detect",
+        _ => language.ToString(),
+    };
 }
 
 public enum DocumentState { Queued, Processing, Done, Failed }

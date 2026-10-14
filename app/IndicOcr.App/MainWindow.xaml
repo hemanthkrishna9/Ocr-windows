@@ -43,6 +43,10 @@
                                 <MenuFlyoutItem Text="Save as text (.txt)" Click="SaveTxt_Click" />
                                 <MenuFlyoutItem Text="Save as Word (.docx)" Click="SaveDocx_Click" />
                                 <MenuFlyoutItem Text="Save as searchable PDF" Click="SavePdf_Click" />
+                                <MenuFlyoutItem Text="Save tables as Excel (.xlsx)" Click="SaveXlsx_Click" />
+                                <MenuFlyoutSeparator />
+                                <ToggleMenuFlyoutItem x:Name="RedactToggle" Text="Redact ID numbers (Aadhaar, PAN, phone)"
+                                                      Click="RedactToggle_Click" />
                             </MenuFlyout>
                         </DropDownButton.Flyout>
                     </DropDownButton>
@@ -111,6 +115,8 @@
                     <Button x:Name="PrevPageButton" Content="Previous" Click="PrevPage_Click" />
                     <TextBlock x:Name="PageLabel" VerticalAlignment="Center" Text="No page" />
                     <Button x:Name="NextPageButton" Content="Next" Click="NextPage_Click" />
+                    <TextBlock x:Name="DetectedLabel" VerticalAlignment="Center" FontSize="12" Opacity="0.8"
+                               TextTrimming="CharacterEllipsis" />
                 </StackPanel>
                 <Border Grid.Row="1" BorderThickness="1" CornerRadius="4"
                         BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}">
@@ -118,6 +124,7 @@
                         <Grid x:Name="PageGrid">
                             <Image x:Name="PageImage" Stretch="Fill" />
                             <Canvas x:Name="BoxCanvas" />
+                            <Canvas x:Name="RedactCanvas" IsHitTestVisible="False" />
                         </Grid>
                     </Viewbox>
                 </Border>

@@ -6,6 +6,7 @@ using Xunit.Abstractions;
 
 namespace IndicOcr.Core.Tests;
 
+[Collection("Timing")]
 public class IntegrationTests
 {
     readonly ITestOutputHelper _out;

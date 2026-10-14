@@ -2,8 +2,15 @@ using System.Drawing;
 
 namespace IndicOcr.Core;
 
-/// <summary>Languages the v1 engine can read. Hindi uses the Devanagari model (also Marathi).</summary>
-public enum OcrLanguage { English, Telugu, Hindi, Tamil, Kannada }
+/// <summary>
+/// Languages the engine can read. Hindi uses the Devanagari model (also Marathi).
+/// <see cref="Auto"/> is not a language but a mode: put it in the languages list (alone, or with <see cref="English"/>) and the engine
+/// picks the script of each line itself among the Telugu, Hindi, Tamil and Kannada models present in the models folder
+/// (English is always read, via the Indic recognizers). If Indic languages are listed together with Auto, detection is restricted to
+/// those. Lines are labelled with the language that was detected; <see cref="OcrPage.DetectedLanguages"/> summarises the page.
+/// <see cref="Auto"/> is never a value of <see cref="OcrLine.Language"/> and never in <c>OcrEngine.AvailableLanguages</c>.
+/// </summary>
+public enum OcrLanguage { English, Telugu, Hindi, Tamil, Kannada, Auto }
 
 /// <summary>One recognised text line. Box and Polygon are in page pixel coordinates.</summary>
 public sealed record OcrLine(string Text, float Confidence, OcrLanguage Language, RectangleF Box, PointF[] Polygon);
@@ -25,6 +32,13 @@ public sealed record OcrPage(int PageIndex, int Width, int Height, IReadOnlyList
     /// values under 100 are treated as "unknown"); null otherwise. The searchable PDF uses it for the page size and falls back to 300.
     /// </summary>
     public int? SourceDpi { get; init; }
+
+    /// <summary>
+    /// Languages found on the page, most lines first, from the line labels (Latin-only lines count as English). Filled in every mode;
+    /// with <see cref="OcrLanguage.Auto"/> it is the answer to "which languages is this page in", e.g. "Telugu, English".
+    /// Empty when the page has no text.
+    /// </summary>
+    public IReadOnlyList<OcrLanguage> DetectedLanguages { get; init; } = Array.Empty<OcrLanguage>();
 }
 
 public sealed record OcrEngineOptions
