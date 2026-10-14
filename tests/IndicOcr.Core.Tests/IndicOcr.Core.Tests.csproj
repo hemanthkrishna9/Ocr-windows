@@ -28,4 +28,7 @@
     <ProjectReference Include="..\..\src\IndicOcr.Core\IndicOcr.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="TestFonts\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

@@ -76,7 +76,14 @@ public static class TestEnv
         catch { return false; }
     }
 
-    public static string Font(string file) => Path.Combine(FontsDir!, file);
+    public static string Font(string file)
+    {
+        var path = Path.Combine(FontsDir!, file);
+        if (File.Exists(path)) return path;
+        // Fonts the app does not bundle (e.g. NotoSans-Bold) ship with the tests.
+        var bundled = Path.Combine(AppContext.BaseDirectory, "TestFonts", file);
+        return File.Exists(bundled) ? bundled : path;
+    }
 
     /// <summary>Renders each line with HarfBuzz shaping (needed for Indic conjuncts) on white.</summary>
     public static SKBitmap Render(IReadOnlyList<(string Text, string FontFile)> lines, int width, int height, float size, float lineGap = 1.6f, float left = 60)
