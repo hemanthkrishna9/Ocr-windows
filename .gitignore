@@ -1,0 +1,28 @@
+# .NET build output
+bin/
+obj/
+*.user
+.vs/
+*.suo
+TestResults/
+publish/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# Models are never committed
+models/
+models-work/
+*.onnx
+*.pdmodel
+*.pdiparams
+
+# Private real scans used for benchmarking
+bench/data/real*/
+
+# OS junk
+.DS_Store
+Thumbs.db
