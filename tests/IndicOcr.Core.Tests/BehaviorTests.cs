@@ -100,8 +100,11 @@ public class MixedTokenFixTests
     [InlineData("Rs.5೦೦೦", "Rs.5000")]                  // Kannada zeros
     [InlineData("Rs.5౦౦౦/-", "Rs.5000/-")]              // Telugu zeros
     [InlineData("AP09CX1234", "AP09CX1234")]
-    [InlineData("APం9CX1234", "AP09CX1234")]            // vehicle number, zero between letters and digit
-    [InlineData("ABCDEం234F", "ABCDE0234F")]            // PAN: next char is a digit
+    [InlineData("AP9ం9CX1234", "AP909CX1234")]          // anusvara between two digits -> zero
+    [InlineData("APం9CX1234", "APం9CX1234")]            // letter | digit: ambiguous, unchanged
+    [InlineData("ABCDEం234F", "ABCDEం234F")]            // letter | digit: ambiguous, unchanged
+    [InlineData("Rs.5000ం", "Rs.5000ం")]                // stray mark after the last digit: NOT a new zero
+    [InlineData("GSTIN:36AAACం1234", "GSTIN:36AAACం1234")] // stray mark between letters and digits: not invented
     [InlineData("ABCంDE1234F", "ABCODE1234F")]          // PAN, upper-case run
     [InlineData("TS09EA१२३४", "TS09EA१२३४")]            // other Indic digits: leave alone (not a zero)
     [InlineData("12-05-2023 ఽ", "12-05-2023 ఽ")]
@@ -167,6 +170,72 @@ public class ColumnOrderingTests
         Assert.Equal("value0", order[1]);
         Assert.Equal("label1", order[2]);
     }
+}
+
+public class FormOrderingTests
+{
+    // Geometry measured on a rendered "label | value" form (critic repro kvform.png): a title across the page, ten rows with short
+    // labels at x~195 and values at x~1246, row-aligned. Reading it column by column would give all labels, then all values.
+    static List<(string, RectangleF)> Form(float labelW, float valueW)
+    {
+        var boxes = new List<(string, RectangleF)> { ("title", new RectangleF(197, 52, 1106, 62)) };
+        for (int i = 0; i < 10; i++)
+        {
+            boxes.Add(($"label{i}", new RectangleF(195, 168 + i * 109, labelW + (i % 3) * 60, 60)));
+            boxes.Add(($"value{i}", new RectangleF(1246, 178 + i * 109, valueW + (i % 4) * 30, 55)));
+        }
+        return boxes;
+    }
+
+    [Fact]
+    public void A_label_value_form_is_read_row_by_row()
+    {
+        var order = LineOrdering.Order(Form(240, 380), b => b.Item2).Select(b => b.Item1).ToArray();
+        var expected = new[] { "title" }.Concat(Enumerable.Range(0, 10).SelectMany(i => new[] { $"label{i}", $"value{i}" })).ToArray();
+        Assert.Equal(expected, order);
+    }
+
+    [Fact]
+    public void Row_aligned_prose_columns_with_a_gutter_narrower_than_the_text_are_still_columns()
+    {
+        // twocol.png: two ~730 px wide text columns, 460 px gutter, lines at the same heights in both columns
+        var boxes = new List<(string, RectangleF)>();
+        for (int i = 0; i < 6; i++)
+        {
+            boxes.Add(($"L{i}", new RectangleF(98, 80 + i * 90, 600 + (i % 3) * 60, 55)));
+            boxes.Add(($"R{i}", new RectangleF(1297, 78 + i * 90, 600 + (i % 2) * 120, 55)));
+        }
+        var order = LineOrdering.Order(boxes, b => b.Item2).Select(b => b.Item1).ToArray();
+        Assert.Equal(Enumerable.Range(0, 6).Select(i => $"L{i}").Concat(Enumerable.Range(0, 6).Select(i => $"R{i}")).ToArray(), order);
+    }
+
+    [Fact]
+    public void Columns_with_unaligned_rows_and_a_wide_gap_are_still_columns()
+    {
+        var boxes = new List<(string, RectangleF)>();
+        for (int i = 0; i < 6; i++)
+        {
+            boxes.Add(($"L{i}", new RectangleF(100, 100 + i * 80, 500, 50)));
+            boxes.Add(($"R{i}", new RectangleF(1500, 140 + i * 80, 500, 50))); // half a line lower, gap 900 > text 500
+        }
+        var order = LineOrdering.Order(boxes, b => b.Item2).Select(b => b.Item1).ToArray();
+        Assert.Equal(Enumerable.Range(0, 6).Select(i => $"L{i}").Concat(Enumerable.Range(0, 6).Select(i => $"R{i}")).ToArray(), order);
+    }
+}
+
+public class UpsideDownDecisionTests
+{
+    // (upright, flipped) mean scores measured on the critic's inputs
+    [Theory]
+    [InlineData(-0.240, -0.038, true)]   // rot180.png
+    [InlineData(-0.261, -0.036, true)]   // te_rot180.png
+    [InlineData(-0.498, -0.164, true)]   // degraded page that really is upside down
+    [InlineData(-0.307, -0.164, false)]  // te_deg2.jpg: upright but unreadable, flipping only moves the garbage (gain 0.14)
+    [InlineData(-0.700, -0.300, false)]  // big gain, but the flipped reading is itself below the floor
+    [InlineData(-0.231, -0.396, false)]
+    [InlineData(-0.402, -0.367, false)]
+    public void Flip_needs_a_clear_gain_and_a_readable_flipped_page(double upright, double flipped, bool expected) =>
+        Assert.Equal(expected, OcrEngine.AcceptFlip(upright, flipped));
 }
 
 public class OrientationGeometryTests

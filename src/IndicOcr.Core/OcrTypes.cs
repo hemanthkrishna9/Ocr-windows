@@ -51,7 +51,8 @@ public sealed record OcrEngineOptions
     public bool UseDirectML { get; init; } = false;
     /// <summary>
     /// Detect pages that lie on their side or upside down and turn them upright (see <see cref="OcrPage.RotationApplied"/>).
-    /// Upright pages pay nothing for it; set false to never rotate.
+    /// Upright pages that read well pay nothing; an upright page that reads poorly re-reads about five lines to test the upside-down
+    /// hypothesis (roughly 10% more time). Set false to never rotate.
     /// </summary>
     public bool AutoRotate { get; init; } = true;
 }

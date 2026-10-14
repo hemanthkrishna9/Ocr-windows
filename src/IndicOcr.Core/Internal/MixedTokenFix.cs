@@ -5,8 +5,11 @@ namespace IndicOcr.Core.Internal;
 /// <summary>
 /// Narrow post-fix for identifiers (survey numbers "Sy.No.12/A", PAN, vehicle numbers, "Rs.5000") read by an Indic recognizer:
 /// inside a whitespace-delimited token that has at least two ASCII letters and NO other non-ASCII character, an isolated
-/// zero-like Indic glyph is mapped back to Latin. Zero digits of Telugu/Kannada/Tamil/Devanagari become '0'; an anusvara
-/// (which the recognizers produce for a round 'o' or '0') becomes '0' next to a digit, otherwise 'o' ('O' in an upper-case run).
+/// zero-like Indic glyph is mapped back to Latin. Zero digits of Telugu/Kannada/Tamil/Devanagari become '0'. An anusvara
+/// (which the recognizers produce for a round 'o' or '0', but also as a stray mark) is mapped only when the context is unambiguous:
+/// '0' when BOTH neighbours are digits; 'o' ('O' in an upper-case run) when neither neighbour is a digit and the previous one is a
+/// Latin letter (the next one a letter, punctuation or the token end). Anything else, e.g. a mark after the last digit of "Rs.5000"
+/// or between letters and digits in a GSTIN, is left unchanged rather than inventing a character.
 /// Tokens that contain any other Indic character are left alone, so real Indic words are never touched.
 /// </summary>
 internal static class MixedTokenFix
@@ -59,7 +62,8 @@ internal static class MixedTokenFix
             if (IsZeroDigit(c)) { r[k] = '0'; continue; }
             if (!IsAnusvara(c)) continue;
             char prev = k > 0 ? r[k - 1] : '\0', next = k + 1 < r.Length ? r[k + 1] : '\0';
-            if (char.IsAsciiDigit(next) || char.IsAsciiDigit(prev)) r[k] = '0';
+            if (char.IsAsciiDigit(prev) && char.IsAsciiDigit(next)) r[k] = '0';
+            else if (char.IsAsciiDigit(prev) || char.IsAsciiDigit(next) || !char.IsAsciiLetter(prev)) continue;
             else if (char.IsAsciiLetterUpper(prev) && (next == '\0' || char.IsAsciiLetterUpper(next))) r[k] = 'O';
             else r[k] = 'o';
         }

@@ -7,6 +7,9 @@
     <LangVersion>latest</LangVersion>
     <NoWarn>$(NoWarn);CA1416</NoWarn>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <!-- A consumer that restores with -r <rid> (the app: win-x64, win-arm64) restores this project for that one RID too, which adds a
+         runtime section to the lock file. Keep one lock file per RID so such a restore never rewrites packages.lock.json and locked mode works. -->
+    <NuGetLockFilePath Condition="'$(RuntimeIdentifiers)' != '' and !$(RuntimeIdentifiers.Contains(';'))">$(MSBuildProjectDirectory)/packages.$(RuntimeIdentifiers).lock.json</NuGetLockFilePath>
     <Description>Offline Indic OCR core (PaddleOCR on ONNX Runtime). No network code.</Description>
   </PropertyGroup>
 

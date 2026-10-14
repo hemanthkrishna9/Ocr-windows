@@ -93,15 +93,16 @@ internal static class Preprocess
 
     /// <summary>
     /// Cuts the quad (tl,tr,br,bl) out of the page with an affine (parallelogram) warp and resizes it to height 48,
-    /// keeping aspect. Tall boxes (h/w &gt;= 1.5) are rotated 90 degrees counter-clockwise as PaddleOCR does.
+    /// keeping aspect. Tall boxes (h/w &gt;= 1.5) are rotated 90 degrees counter-clockwise as PaddleOCR does, unless <paramref name="rotateTall"/> is false
+    /// (upright single digits in narrow table cells are tall boxes that must be read as they stand).
     /// </summary>
-    public static LineCrop Crop(ReadOnlySpan<byte> px, int imgW, int imgH, Pt[] q)
+    public static LineCrop Crop(ReadOnlySpan<byte> px, int imgW, int imgH, Pt[] q, bool rotateTall = true)
     {
         double w = Math.Max((q[1] - q[0]).Length, (q[2] - q[3]).Length);
         double h = Math.Max((q[3] - q[0]).Length, (q[2] - q[1]).Length);
         w = Math.Max(w, 1);
         h = Math.Max(h, 1);
-        bool rotate = h / w >= 1.5;
+        bool rotate = rotateTall && h / w >= 1.5;
         double outAspect = rotate ? h / w : w / h;
         // never create absurdly wide crops
         int outW = Math.Min(RecWidth(outAspect), 8192);

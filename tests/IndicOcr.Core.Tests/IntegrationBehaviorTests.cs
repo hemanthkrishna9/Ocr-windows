@@ -160,6 +160,84 @@ public class IntegrationBehaviorTests
         }
     }
 
+    /// <summary>Grid of bordered single-digit cells (tall boxes), optionally with a wide Telugu label column; returns the digits row by row.</summary>
+    static SKBitmap DigitTable(bool labelColumn, out List<string> rowDigits)
+    {
+        const int cols = 12, rows = 8, cellW = 130, cellH = 100, gap = 30, labelW = 560;
+        int x0 = 60 + (labelColumn ? labelW : 0);
+        var bmp = new SKBitmap(x0 + cols * (cellW + gap) + 60, rows * (cellH + gap) + 120);
+        using var c = new SKCanvas(bmp);
+        c.Clear(SKColors.White);
+        using var border = new SKPaint { Color = SKColors.Black, Style = SKPaintStyle.Stroke, StrokeWidth = 3 };
+        using var ink = new SKPaint { Color = SKColors.Black, IsAntialias = true };
+        using var digitFont = new SKFont(SKTypeface.FromFile(TestEnv.Font("NotoSans-Regular.ttf")), 62) { ScaleX = 0.55f };
+        using var teFont = new SKFont(SKTypeface.FromFile(TestEnv.Font("NotoSansTelugu-Regular.ttf")), 44);
+        var rnd = new Random(7);
+        rowDigits = new List<string>();
+        for (int r = 0; r < rows; r++)
+        {
+            float y = 60 + r * (cellH + gap);
+            var digits = new System.Text.StringBuilder();
+            if (labelColumn)
+            {
+                c.DrawRect(60, y, labelW - gap, cellH, border);
+                c.DrawShapedText(TeluguLines[r % 4], 80, y + 66, SKTextAlign.Left, teFont, ink);
+            }
+            for (int k = 0; k < cols; k++)
+            {
+                char d = (char)('2' + rnd.Next(8)); // no 0 (read as O in isolation) and no 1 (its box merges with the cell border): not what this test is about
+                digits.Append(d);
+                float x = x0 + k * (cellW + gap);
+                c.DrawRect(x, y, cellW, cellH, border);
+                c.DrawText(d.ToString(), x + cellW / 2f, y + 68, SKTextAlign.Center, digitFont, ink);
+            }
+            rowDigits.Add(digits.ToString());
+        }
+        return bmp;
+    }
+
+    [ModelsTheory]
+    [InlineData(false)] [InlineData(true)]
+    public void A_bordered_single_digit_table_stays_upright_and_its_digits_are_read(bool withTeluguLabelColumn)
+    {
+        using var bmp = DigitTable(withTeluguLabelColumn, out var rowDigits);
+        using var eng = new OcrEngine(TestEnv.ModelsDir!);
+        var page = eng.Recognize(bmp, new[] { OcrLanguage.Telugu, OcrLanguage.English });
+        var got = string.Concat(page.Lines.Select(l => new string(l.Text.Where(char.IsAsciiDigit).ToArray())));
+        var want = string.Concat(rowDigits);
+        double cer = TestEnv.Cer(want, got);
+        _out.WriteLine($"rotation {page.RotationApplied}, {page.Lines.Count} lines, digit CER {cer:F3}");
+        Assert.Equal(0, page.RotationApplied);
+        Assert.True(cer < 0.1, $"digit CER {cer:F3}: {got}");
+    }
+
+    [ModelsFact]
+    public void A_label_value_form_is_read_row_by_row_end_to_end()
+    {
+        using var bmp = new SKBitmap(1900, 1000);
+        using (var c = new SKCanvas(bmp))
+        {
+            c.Clear(SKColors.White);
+            using var te = new SKFont(SKTypeface.FromFile(TestEnv.Font("NotoSansTelugu-Regular.ttf")), 44);
+            using var ink = new SKPaint { Color = SKColors.Black, IsAntialias = true };
+            c.DrawShapedText("భూమి యాజమాన్య ధృవీకరణ పత్రం రెవెన్యా శాఖ", 100, 70, SKTextAlign.Left, te, ink);
+            for (int i = 0; i < 8; i++)
+            {
+                c.DrawShapedText(i % 2 == 0 ? "పట్టాదారు పేరు" : "గ్రామం మరియు మండలం", 100, 190 + i * 100, SKTextAlign.Left, te, ink);
+                c.DrawShapedText(TeluguLines[i % 4], 1100, 190 + i * 100, SKTextAlign.Left, te, ink);
+            }
+        }
+        using var eng = new OcrEngine(TestEnv.ModelsDir!);
+        var page = eng.Recognize(bmp, new[] { OcrLanguage.Telugu });
+        foreach (var l in page.Lines) _out.WriteLine($"{l.Box.Left:F0},{l.Box.Top:F0},{l.Box.Width:F0},{l.Box.Height:F0} {l.Text}");
+        Assert.Equal(17, page.Lines.Count);
+        for (int i = 0; i < 8; i++)
+        {
+            Assert.True(page.Lines[1 + 2 * i].Box.Left < 500, $"line {1 + 2 * i} should be label {i}");
+            Assert.True(page.Lines[2 + 2 * i].Box.Left > 900, $"line {2 + 2 * i} should be value {i}");
+        }
+    }
+
     [ModelsFact]
     public void Rotation_can_be_switched_off()
     {

@@ -661,7 +661,7 @@ public sealed partial class MainWindow : Window
                     case "txt": TextExporter.Write(pages.Select(p => p.Page), path); break;
                     case "docx": DocxExporter.Write(pages.Select(p => p.Page), path); break;
                     // null: Core looks in <exe dir>\fonts first, where the bundled Noto fonts are copied.
-                    default: SearchablePdfExporter.Write(DecodePages(pages), path, null); break;
+                    default: SearchablePdfExporter.Write(ReadCachedJpegs(pages), path, null); break;
                 }
             });
             SetStatus("Saved " + file.Name);
@@ -680,17 +680,13 @@ public sealed partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Decodes cached page images lazily, one at a time. The exporter consumes the sequence page by
-    /// page, so only one full-resolution bitmap exists at any moment; each is disposed when the
-    /// exporter asks for the next page.
+    /// Reads the cached page JPEGs lazily, one at a time, and hands the bytes straight to the exporter (no decode and no re-encode, so
+    /// no quality loss). The exporter consumes the sequence page by page, so only one page's bytes are held at any moment.
     /// </summary>
-    private static IEnumerable<(SKBitmap Image, OcrPage Page)> DecodePages(List<(string Path, OcrPage Page)> pages)
+    private static IEnumerable<(byte[] Jpeg, OcrPage Page)> ReadCachedJpegs(List<(string Path, OcrPage Page)> pages)
     {
         foreach (var (path, page) in pages)
-        {
-            using var bitmap = SKBitmap.Decode(path) ?? throw new IOException("Could not read a cached page image.");
-            yield return (bitmap, page);
-        }
+            yield return (File.ReadAllBytes(path), page);
     }
 
     private bool CopyToClipboard(string text)

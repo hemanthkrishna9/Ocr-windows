@@ -144,18 +144,20 @@ public sealed class OcrEngine : IDisposable
             }
 
             // 1) Quarter turn: when most boxes are tall the page lies on its side.
+            bool tallAsIs = false;
             if (_opt.AutoRotate && quads.Count >= 4 && PageOrientation.TallFraction(quads) > 0.6)
             {
-                int k = ChooseQuarterTurn(px, quads, langs);
+                var (k, asIs) = ChooseQuarterTurn(px, quads, langs);
+                tallAsIs = asIs;
                 if (k != 0) Turn(k);
             }
 
             // 2) Recognise. Only when the lines read badly, test the upside-down hypothesis on a small sample.
-            var results = RecognizeQuads(px, quads, langs);
-            if (_opt.AutoRotate && ShouldTryUpsideDown(results) && UpsideDownReadsBetter(px, quads, results, langs))
+            var results = RecognizeQuads(px, quads, langs, !tallAsIs);
+            if (_opt.AutoRotate && ShouldTryUpsideDown(results) && UpsideDownReadsBetter(px, quads, results, langs, !tallAsIs))
             {
                 Turn(2);
-                results = RecognizeQuads(px, quads, langs);
+                results = RecognizeQuads(px, quads, langs, !tallAsIs);
             }
 
             var lines = BuildLines(results, quads, langs, keepEmpty: false);
@@ -195,7 +197,15 @@ public sealed class OcrEngine : IDisposable
     /// <summary>Mean per-frame log-probability under which a page is suspected to be upside down (upright pages measured well above it).</summary>
     const double UpsideDownTrigger = -0.12;
     /// <summary>The upside-down reading must beat the upright one by this much (mean per-frame log-probability) to be accepted.</summary>
-    const double UpsideDownMargin = 0.10;
+    const double UpsideDownMargin = 0.17;
+    /// <summary>
+    /// ...and must itself read plausibly (mean per-frame log-probability above this): flipping a page whose upright reading is garbage
+    /// and whose flipped reading is just as bad only moves the garbage. Measured: genuine flips read -0.04 to -0.16 flipped and gain
+    /// 0.20 to 0.33; an upright, unreadable degraded page gained 0.14 (flipped -0.16), the rest of the degraded sweep gained nothing.
+    /// </summary>
+    const double UpsideDownFloor = -0.25;
+    /// <summary>A quarter turn must beat the upright reading by this much (mean per-frame log-probability) to be accepted.</summary>
+    const double QuarterTurnMargin = 0.10;
 
     static List<int> LongestQuads(IReadOnlyList<Pt[]> quads, IReadOnlyList<Rec> results, int n)
     {
@@ -206,19 +216,27 @@ public sealed class OcrEngine : IDisposable
         return idx;
     }
 
-    /// <summary>Tries a 90 and a 270 degree clockwise turn on the longest boxes and returns the one that reads better.</summary>
-    int ChooseQuarterTurn(PixelImage px, List<Pt[]> quads, IReadOnlyList<OcrLanguage> langs)
+    /// <summary>
+    /// The page has mostly tall boxes. Reads the longest boxes three ways: upright with the tall boxes read as they stand (single digits
+    /// in narrow table cells), turned 90 and turned 270 degrees clockwise. A turn is chosen only when it beats the upright reading by
+    /// <see cref="QuarterTurnMargin"/>; otherwise the page is upright and <c>TallAsIs</c> tells the caller to read tall boxes unrotated.
+    /// </summary>
+    (int Turn, bool TallAsIs) ChooseQuarterTurn(PixelImage px, List<Pt[]> quads, IReadOnlyList<OcrLanguage> langs)
     {
         var sample = LongestQuads(quads, Array.Empty<Rec>(), OrientationSample);
+        var uprightQ = sample.Select(i => quads[i]).ToList();
+        var upRec = RecognizeQuads(px, uprightQ, langs, rotateTall: false);
+        double upright = MeanScoreBlankFails(upRec);
         double best = double.NegativeInfinity;
         int bestTurn = 3;
         foreach (int k in new[] { 3, 1 }) // 3 first: it is what the crop does anyway for tall boxes
         {
             var q = sample.Select(i => PageOrientation.Reorder(quads[i], k)).ToList();
-            double s = MeanScore(RecognizeQuads(px, q, langs));
+            var rr = RecognizeQuads(px, q, langs);
+            double s = MeanScoreBlankFails(rr);
             if (s > best) { best = s; bestTurn = k; }
         }
-        return bestTurn;
+        return best > upright + QuarterTurnMargin ? (bestTurn, false) : (0, true);
     }
 
     static bool ShouldTryUpsideDown(IReadOnlyList<Rec> results)
@@ -227,16 +245,25 @@ public sealed class OcrEngine : IDisposable
         return scored.Count >= 2 && MeanScore(scored) < UpsideDownTrigger;
     }
 
-    bool UpsideDownReadsBetter(PixelImage px, List<Pt[]> quads, IReadOnlyList<Rec> results, IReadOnlyList<OcrLanguage> langs)
+    bool UpsideDownReadsBetter(PixelImage px, List<Pt[]> quads, IReadOnlyList<Rec> results, IReadOnlyList<OcrLanguage> langs, bool rotateTall)
     {
         var sample = LongestQuads(quads, results, OrientationSample);
         if (sample.Count == 0) return false;
         double upright = MeanScore(sample.Select(i => results[i]).ToList());
-        var flipped = RecognizeQuads(px, sample.Select(i => PageOrientation.Reorder(quads[i], 2)).ToList(), langs);
-        return MeanScore(flipped) > upright + UpsideDownMargin;
+        var flipped = RecognizeQuads(px, sample.Select(i => PageOrientation.Reorder(quads[i], 2)).ToList(), langs, rotateTall);
+        double fs = MeanScore(flipped);
+        return AcceptFlip(upright, fs);
     }
 
+    /// <summary>The upside-down reading wins only when it reads plausibly in absolute terms and beats the upright reading by the margin.</summary>
+    internal static bool AcceptFlip(double upright, double flipped) => flipped > UpsideDownFloor && flipped > upright + UpsideDownMargin;
+
     static double MeanScore(IReadOnlyList<Rec> r) => r.Count == 0 ? double.NegativeInfinity : r.Average(x => (double)x.Score);
+
+    /// <summary>Like <see cref="MeanScore"/>, but a reading with no text counts as a failed read (a blank line scores deceptively well).</summary>
+    static double MeanScoreBlankFails(IReadOnlyList<Rec> r) =>
+        r.Count == 0 ? double.NegativeInfinity : r.Average(x => string.IsNullOrWhiteSpace(x.Text) ? BlankReadScore : (double)x.Score);
+    const double BlankReadScore = -1.0;
 
     // ---- recognition -------------------------------------------------------------------------------------------
 
@@ -252,13 +279,13 @@ public sealed class OcrEngine : IDisposable
         return langs;
     }
 
-    List<Rec> RecognizeQuads(PixelImage px, List<Pt[]> quads, IReadOnlyList<OcrLanguage> langs)
+    List<Rec> RecognizeQuads(PixelImage px, List<Pt[]> quads, IReadOnlyList<OcrLanguage> langs, bool rotateTall = true)
     {
         var best = new Rec[quads.Count];
         if (quads.Count == 0) return best.ToList();
         var crops = new List<Preprocess.LineCrop>(quads.Count);
         var span = px.Pixels;
-        foreach (var q in quads) crops.Add(Preprocess.Crop(span, px.Width, px.Height, q));
+        foreach (var q in quads) crops.Add(Preprocess.Crop(span, px.Width, px.Height, q, rotateTall));
 
         // Every recognizer reads every crop; the reading with the larger Mass wins (see DecodeResult), with one safeguard below.
         var all = new List<Rec>[quads.Count];

@@ -38,7 +38,10 @@ internal static class LineOrdering
     /// <summary>
     /// Finds a vertical gap [lo, hi] splitting the boxes into a left and a right column: both columns have at least 3 lines
     /// that are wide (a fifth of the text width or more, so label/value tables are not mistaken for columns), at most 15% of
-    /// the boxes span the gap, and the gap is wider than two line heights. Null when the page is single-column.
+    /// the boxes span the gap, and the gap is wider than two line heights. A label/value form is not a column layout: when most left
+    /// lines have a right partner on the same row AND the strip between them is much wider than the left text (short labels, a big empty strip,
+    /// then the values) the page is read row by row. Prose columns have a gutter about as wide as their text or less, so they pass.
+    /// Null when the page is single-column.
     /// </summary>
     internal static (float Lo, float Hi)? FindColumnGap(IReadOnlyList<RectangleF> rects)
     {
@@ -72,9 +75,35 @@ internal static class LineOrdering
             }
             if (leftN < 3 || rightN < 3 || spanN > 0.15 * n) continue;
             if (Median(leftW) < 0.2f * width || Median(rightW) < 0.2f * width) continue;
+            if (LooksLikeForm(rects, lo, hi)) continue;
             if (spanN < bestSpan || (spanN == bestSpan && hi - lo > bestW)) { bestSpan = spanN; bestW = hi - lo; best = (lo, hi); }
         }
         return best;
+    }
+
+    /// <summary>
+    /// Row-aligned label/value pairs: at least 60% of the left lines share a row with a right line, and the empty strip between the
+    /// left text and the right lines is wider than the left text itself (measured strip / text: forms 1.3 to 1.9, prose columns 0.6).
+    /// The left text's end ignores lines more than 1.5 times as wide as the median (a heading above the labels).
+    /// </summary>
+    static bool LooksLikeForm(IReadOnlyList<RectangleF> rects, float lo, float hi)
+    {
+        var left = rects.Where(r => r.Right <= lo).ToList();
+        var right = rects.Where(r => r.Left >= hi).ToList();
+        if (left.Count == 0 || right.Count == 0) return false;
+        float medW = Median(left.Select(r => r.Width).ToList());
+        var body = left.Where(r => r.Width <= 1.5f * medW).ToList(); // leaves out a heading much longer than the labels
+        float textEnd = body.Max(r => r.Right);
+        float extent = textEnd - body.Min(r => r.Left);
+        if (hi - textEnd <= 1.0f * extent) return false;
+        int paired = 0;
+        foreach (var l in left)
+            foreach (var r in right)
+            {
+                float overlap = Math.Min(l.Bottom, r.Bottom) - Math.Max(l.Top, r.Top);
+                if (overlap > 0.5f * Math.Min(l.Height, r.Height)) { paired++; break; }
+            }
+        return paired >= 0.6 * left.Count;
     }
 
     static float Median(List<float> v) { v.Sort(); return v[v.Count / 2]; }
